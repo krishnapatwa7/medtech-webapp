@@ -132,10 +132,10 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
         const map: Record<string, string> = {};
         
         if (results.data && results.data.length > 0) {
-          // Extract actual exact header keys to avoid hidden character/BOM issues
-          const keys = Object.keys(results.data[0]);
+          // Cast the first row explicitly so TypeScript knows it's an object with string keys
+          const firstRow = results.data[0] as Record<string, any>;
+          const keys = Object.keys(firstRow);
           
-          // Fuzzy find the correct column headers regardless of exact casing or spaces
           const idKey = keys.find(k => k.toLowerCase().replace(/[^a-z]/g, '').includes('id'));
           const codeKey = keys.find(k => k.toLowerCase().replace(/[^a-z]/g, '').includes('code'));
           const nameKey = keys.find(k => k.toLowerCase().replace(/[^a-z]/g, '').includes('name'));
@@ -145,7 +145,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
             if (name) {
               const cleanName = name.trim();
               
-              // Map both the ID and Code strictly in uppercase so it never misses a match
               if (idKey && row[idKey]) {
                 map[row[idKey].toString().trim().toUpperCase()] = cleanName;
               }
@@ -202,7 +201,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
           const distance = calculateStraightDistance(userLocation.lat, userLocation.lng, hLat, hLng);
           const fallbackTypeCode = filterType === 'GOV' ? 'G' : 'P';
           
-          // Pre-clean specialty codes from the hospital CSV
           const rawSpecialties = row.Speciality_Code ? String(row.Speciality_Code).split(',') : [];
           const cleanSpecialties = rawSpecialties.map(s => s.trim().toUpperCase()).filter(s => s !== '');
 
@@ -235,7 +233,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
   const searchedHospitals = hospitals.filter(hosp => {
     const term = searchQuery.toLowerCase();
     
-    // Check against real specialty names rather than IDs
     const mappedSpecialties = hosp.specialties
       .map(code => (specialtyMap[code] || code).toLowerCase())
       .join(' ');
