@@ -96,10 +96,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
   const [csvLoading, setCsvLoading] = useState<boolean>(true);
   const [filterType, setFilterType] = useState<FilterType>('GOV');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  
-  // React 18+ Hook: Defers the heavy filtering so typing remains instant
   const deferredSearchQuery = useDeferredValue(searchQuery);
-  
   const [currentPage, setCurrentPage] = useState<number>(1);
   const ITEMS_PER_PAGE = 20;
 
@@ -133,7 +130,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
       skipEmptyLines: true,
       complete: (results) => {
         const map: Record<string, string> = {};
-        
         if (results.data && results.data.length > 0) {
           const firstRow = results.data[0] as Record<string, any>;
           const keys = Object.keys(firstRow);
@@ -146,13 +142,8 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
             const name = nameKey ? row[nameKey] : undefined;
             if (name) {
               const cleanName = name.trim();
-              
-              if (idKey && row[idKey]) {
-                map[row[idKey].toString().trim().toUpperCase()] = cleanName;
-              }
-              if (codeKey && row[codeKey]) {
-                map[row[codeKey].toString().trim().toUpperCase()] = cleanName;
-              }
+              if (idKey && row[idKey]) map[row[idKey].toString().trim().toUpperCase()] = cleanName;
+              if (codeKey && row[codeKey]) map[row[codeKey].toString().trim().toUpperCase()] = cleanName;
             }
           });
         }
@@ -232,34 +223,28 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
     });
   }, [filterType, userLocation.lat, userLocation.lng]);
 
-  // Performance Fix: useMemo ensures this 50,000 item loop ONLY runs when the deferred search query actually changes
   const searchedHospitals = useMemo(() => {
     const term = deferredSearchQuery.toLowerCase();
-    
     if (!term) return hospitals;
 
     return hospitals.filter(hosp => {
       const mappedSpecialties = hosp.specialties
         .map(code => (specialtyMap[code] || code).toLowerCase())
         .join(' ');
-
       return hosp.name.toLowerCase().includes(term) || mappedSpecialties.includes(term);
     });
   }, [hospitals, deferredSearchQuery, specialtyMap]);
 
   const totalPages = Math.ceil(searchedHospitals.length / ITEMS_PER_PAGE);
   
-  // Performance Fix: Memoize pagination slice
   const paginatedHospitals = useMemo(() => {
-    return searchedHospitals.slice(
-      (currentPage - 1) * ITEMS_PER_PAGE, 
-      currentPage * ITEMS_PER_PAGE
-    );
+    return searchedHospitals.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   }, [searchedHospitals, currentPage]);
 
   return (
     <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       
+      {/* Top Location Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <button onClick={onBack} className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-blue-900 bg-white hover:bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer w-fit">
           <ArrowLeft className="w-4 h-4" />
@@ -308,60 +293,69 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-7 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">PM-JAY Hospital Database</h2>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
-              Showing sorted results closest to <span className="font-semibold text-slate-900">{userLocation.city}</span>
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2 text-xs bg-slate-50 border border-slate-200/70 px-3 py-2 rounded-xl text-slate-700 shrink-0">
-            <MapPin className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>Total Found: <strong>{searchedHospitals.length}</strong></span>
-          </div>
+      {/* Clean Title Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-1">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">PM-JAY Hospital Database</h2>
+          <p className="text-sm text-slate-600 mt-1 max-w-2xl">
+            Showing sorted results closest to <span className="font-semibold text-slate-900">{userLocation.city}</span>
+          </p>
         </div>
-
-        <div className="pt-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
-            {FILTER_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                onClick={() => {
-                  setFilterType(opt.id);
-                  setSearchQuery('');
-                }}
-                className={`text-xs font-bold px-3.5 py-2 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                  filterType === opt.id ? 'bg-blue-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="relative shrink-0 w-full sm:w-64 xl:w-auto">
-            <input
-              type="text"
-              placeholder="Search hospital or surgery..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full sm:w-64 text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 pl-8 focus:ring-2 focus:ring-blue-900"
-            />
-            <Stethoscope className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-            
-            {/* Tiny loading indicator to show background filtering is happening */}
-            {searchQuery !== deferredSearchQuery && (
-              <RefreshCw className="w-3.5 h-3.5 text-blue-500 animate-spin absolute right-3 top-2.5" />
-            )}
-          </div>
+        <div className="flex items-center gap-2 text-sm bg-white border border-slate-200/90 px-4 py-2.5 rounded-xl text-slate-700 shadow-xs">
+          <MapPin className="w-4 h-4 text-rose-600 shrink-0" />
+          <span>Total Found: <strong className="text-slate-900">{searchedHospitals.length}</strong></span>
         </div>
       </div>
 
+      {/* DISTINCT CONTROL PANEL - Filter & Search (Non-Sticky) */}
+      <div className="bg-slate-100 border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+          {FILTER_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => {
+                setFilterType(opt.id);
+                setSearchQuery('');
+                setCurrentPage(1);
+              }}
+              className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                filterType === opt.id 
+                  ? 'bg-blue-900 text-white shadow-md' 
+                  : 'bg-white text-slate-600 border border-slate-200 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300 shadow-2xs'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative shrink-0 w-full sm:w-72 xl:w-auto">
+          <input
+            type="text"
+            placeholder="Search hospital or surgery..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full sm:w-72 text-sm bg-white border border-slate-200 rounded-xl px-4 py-2.5 pl-10 focus:ring-2 focus:ring-blue-900 focus:outline-none shadow-2xs placeholder:text-slate-400"
+          />
+          <Stethoscope className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          
+          {searchQuery !== deferredSearchQuery && (
+            <RefreshCw className="w-4 h-4 text-blue-500 animate-spin absolute right-3.5 top-3" />
+          )}
+        </div>
+      </div>
+
+      {/* Visual Divider to separate Controls from Data */}
+      <div className="flex items-center gap-4 px-1 pt-1 pb-2">
+        <div className="h-px bg-slate-200 flex-1"></div>
+        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Search Results</span>
+        <div className="h-px bg-slate-200 flex-1"></div>
+      </div>
+
+      {/* Results List */}
       <div className="space-y-4">
         {csvLoading ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-12 flex flex-col items-center justify-center space-y-3">
@@ -369,7 +363,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
             <p className="text-sm font-semibold text-slate-700">Loading PM-JAY {filterType} Database...</p>
           </div>
         ) : paginatedHospitals.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-2">
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-2 shadow-xs">
             <AlertCircle className="w-8 h-8 text-slate-400 mx-auto" />
             <p className="text-sm font-semibold text-slate-700">{t.noHospitalsFound}</p>
           </div>
@@ -383,19 +377,19 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
             const mappedTypeLabel = isGov ? 'Government' : (hosp.typeCode.toUpperCase() === 'P' ? 'Private' : hosp.typeCode);
 
             return (
-              <div key={hosp.id} className="bg-white rounded-2xl border border-slate-200/90 hover:border-blue-900/40 p-5 sm:p-6 shadow-2xs transition-all space-y-4">
+              <div key={hosp.id} className="bg-white rounded-2xl border border-slate-200/90 hover:border-blue-900/40 p-5 sm:p-6 shadow-xs hover:shadow-md transition-all space-y-4">
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
                   
                   <div className="space-y-1.5 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="bg-slate-900 text-white text-[11px] font-black px-2 py-0.5 rounded-md">#{globalIndex}</span>
+                      <span className="bg-slate-900 text-white text-[11px] font-black px-2 py-0.5 rounded-md shadow-2xs">#{globalIndex}</span>
                       
-                      <span className="bg-blue-50 text-blue-900 border border-blue-200/80 text-[11px] font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1">
+                      <span className="bg-blue-50 text-blue-900 border border-blue-200/80 text-[11px] font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-2xs">
                         <Building2 className="w-3 h-3 text-blue-800" />
                         <span>{hosp.type}</span>
                       </span>
 
-                      <span className={`border text-[11px] font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1 ${
+                      <span className={`border text-[11px] font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-2xs ${
                         isGov ? 'bg-emerald-50 text-emerald-900 border-emerald-200/80' : 'bg-violet-50 text-violet-900 border-violet-200/80'
                       }`}>
                         {isGov ? <ShieldCheck className="w-3 h-3 text-emerald-800" /> : <CheckCircle className="w-3 h-3 text-violet-800" />}
@@ -403,17 +397,17 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
                       </span>
                     </div>
 
-                    <a href={mapsSearchUrl} target="_blank" rel="noopener noreferrer" className="group/name inline-flex items-center gap-1.5 text-base sm:text-lg font-extrabold text-slate-900 hover:text-blue-900 transition-colors cursor-pointer">
+                    <a href={mapsSearchUrl} target="_blank" rel="noopener noreferrer" className="group/name inline-flex items-center gap-1.5 text-base sm:text-xl font-extrabold text-slate-900 hover:text-blue-900 transition-colors cursor-pointer mt-1">
                       <span className="group-hover/name:underline decoration-blue-900 decoration-2 underline-offset-2">
                         {language === 'hi' ? hosp.nameHi : hosp.name}
                       </span>
-                      <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover/name:text-blue-900 shrink-0" />
+                      <ExternalLink className="w-4 h-4 text-slate-400 group-hover/name:text-blue-900 shrink-0" />
                     </a>
 
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>{language === 'hi' ? hosp.addressHi : hosp.address}</span>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="leading-snug">{language === 'hi' ? hosp.addressHi : hosp.address}</span>
                       </div>
                     </div>
                   </div>
@@ -445,12 +439,12 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
 
                 <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <a href={`tel:${hosp.phone}`} className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl transition-colors">
+                    <a href={`tel:${hosp.phone}`} className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl shadow-2xs transition-colors">
                       <Phone className="w-3.5 h-3.5 text-blue-900" />
                       <span>Call: {hosp.phone}</span>
                     </a>
                   </div>
-                  <a href={mapsDirUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-blue-900 hover:bg-blue-950 px-4 py-2 rounded-xl transition-colors cursor-pointer">
+                  <a href={mapsDirUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-blue-900 hover:bg-blue-950 px-4 py-2 rounded-xl shadow-xs transition-colors cursor-pointer">
                     <Navigation className="w-3.5 h-3.5 text-sky-300" />
                     <span>Get Directions</span>
                   </a>
@@ -466,7 +460,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
           <button 
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
-            className="flex items-center gap-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="flex items-center gap-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             <ChevronLeft className="w-4 h-4" /> Previous
           </button>
@@ -478,13 +472,14 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
           <button 
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
-            className="flex items-center gap-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="flex items-center gap-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             Next <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       )}
 
+      {/* Back to Top Button */}
       {!csvLoading && hospitals.length > 0 && (
         <div className="flex justify-center pt-4 pb-8">
           <button
