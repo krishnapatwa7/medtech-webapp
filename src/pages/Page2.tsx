@@ -107,11 +107,14 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
       let lng = pos.coords.longitude;
       let city = await getCityFromCoords(lat, lng) || '';
 
-      if (city.toLowerCase().includes('jabalpur') || city === '') {
+      // Hackathon Fix: Intercept Raipur & Jabalpur ISP routing and force Bhilai
+      const lowerCity = city.toLowerCase();
+      if (lowerCity.includes('jabalpur') || lowerCity.includes('raipur') || city === '') {
         lat = 21.2120;
         lng = 81.3733;
         city = 'Bhilai';
       }
+      
       setUserLocation({ lat, lng, city: city, source: 'gps' });
     } catch (err) {
       setUserLocation({ lat: 21.2120, lng: 81.3733, city: 'Bhilai', source: 'gps' });
@@ -132,7 +135,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
         const map: Record<string, string> = {};
         
         if (results.data && results.data.length > 0) {
-          // Cast the first row explicitly so TypeScript knows it's an object with string keys
           const firstRow = results.data[0] as Record<string, any>;
           const keys = Object.keys(firstRow);
           
