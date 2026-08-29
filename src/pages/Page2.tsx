@@ -3,7 +3,7 @@ import Papa from 'papaparse';
 import { 
   ArrowLeft, MapPin, Navigation, Phone, Building2, ShieldCheck, 
   CheckCircle, RefreshCw, AlertCircle, Stethoscope, ChevronDown, 
-  LocateFixed, Search, ChevronLeft, ChevronRight, ExternalLink
+  LocateFixed, Search, ChevronLeft, ChevronRight, ExternalLink, ArrowUp
 } from 'lucide-react';
 import { Language, translations } from '../translations';
 import { detectLocation, getBrowserGPS, getCityFromCoords, UserLocation } from '../utils/location';
@@ -367,7 +367,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
               <div key={hosp.id} className="bg-white rounded-2xl border border-slate-200/90 hover:border-blue-900/40 p-5 sm:p-6 shadow-2xs transition-all space-y-4">
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
                   
-                  {/* Left Side: Name, Badges & Address */}
                   <div className="space-y-1.5 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="bg-slate-900 text-white text-[11px] font-black px-2 py-0.5 rounded-md">#{globalIndex}</span>
@@ -400,7 +399,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
                     </div>
                   </div>
 
-                  {/* Right Side: Uncapped Colored Specialties Card */}
                   <div className="shrink-0 w-full lg:w-[45%] bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col gap-2">
                     <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-slate-800 uppercase tracking-wide pb-1.5 border-b border-slate-200/70">
                       <Stethoscope className="w-3.5 h-3.5 text-blue-900" />
@@ -409,7 +407,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
                     
                     <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
                       {hosp.specialties.map((cleanCode, i) => {
-                        // Strict lookup mapping
                         const specName = specialtyMap[cleanCode] || cleanCode;
                         const colorClass = getSpecialtyColor(specName);
                         
@@ -465,6 +462,19 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
             className="flex items-center gap-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Next <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Back to Top Button */}
+      {!csvLoading && hospitals.length > 0 && (
+        <div className="flex justify-center pt-4 pb-8">
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-blue-900 px-6 py-2.5 rounded-full shadow-2xs transition-all cursor-pointer"
+          >
+            <ArrowUp className="w-4 h-4" />
+            <span>Back to Top</span>
           </button>
         </div>
       )}
