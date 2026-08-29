@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
 import Papa from 'papaparse';
 import { 
   ArrowLeft, MapPin, Navigation, Phone, Building2, ShieldCheck, 
@@ -96,6 +96,10 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
   const [csvLoading, setCsvLoading] = useState<boolean>(true);
   const [filterType, setFilterType] = useState<FilterType>('GOV');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // React 18+ Hook: Defers the heavy filtering so typing remains instant
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  
   const [currentPage, setCurrentPage] = useState<number>(1);
   const ITEMS_PER_PAGE = 20;
 
@@ -107,14 +111,11 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
       let lng = pos.coords.longitude;
       let city = await getCityFromCoords(lat, lng) || '';
 
-      // Hackathon Fix: Intercept Raipur & Jabalpur ISP routing and force Bhilai
-      const lowerCity = city.toLowerCase();
-      if (lowerCity.includes('jabalpur') || lowerCity.includes('raipur') || city === '') {
+      if (city.toLowerCase().includes('jabalpur') || city.toLowerCase().includes('raipur') || city === '') {
         lat = 21.2120;
         lng = 81.3733;
         city = 'Bhilai';
       }
-      
       setUserLocation({ lat, lng, city: city, source: 'gps' });
     } catch (err) {
       setUserLocation({ lat: 21.2120, lng: 81.3733, city: 'Bhilai', source: 'gps' });
@@ -125,7 +126,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
 
   useEffect(() => { triggerGpsLocation(); }, []);
 
-  // BULLETPROOF SPECIALTY DICTIONARY PARSER
   useEffect(() => {
     Papa.parse('/data/Speciality_ID_Data.csv', {
       download: true,
@@ -232,21 +232,30 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
     });
   }, [filterType, userLocation.lat, userLocation.lng]);
 
-  const searchedHospitals = hospitals.filter(hosp => {
-    const term = searchQuery.toLowerCase();
+  // Performance Fix: useMemo ensures this 50,000 item loop ONLY runs when the deferred search query actually changes
+  const searchedHospitals = useMemo(() => {
+    const term = deferredSearchQuery.toLowerCase();
     
-    const mappedSpecialties = hosp.specialties
-      .map(code => (specialtyMap[code] || code).toLowerCase())
-      .join(' ');
+    if (!term) return hospitals;
 
-    return hosp.name.toLowerCase().includes(term) || mappedSpecialties.includes(term);
-  });
+    return hospitals.filter(hosp => {
+      const mappedSpecialties = hosp.specialties
+        .map(code => (specialtyMap[code] || code).toLowerCase())
+        .join(' ');
+
+      return hosp.name.toLowerCase().includes(term) || mappedSpecialties.includes(term);
+    });
+  }, [hospitals, deferredSearchQuery, specialtyMap]);
 
   const totalPages = Math.ceil(searchedHospitals.length / ITEMS_PER_PAGE);
-  const paginatedHospitals = searchedHospitals.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE, 
-    currentPage * ITEMS_PER_PAGE
-  );
+  
+  // Performance Fix: Memoize pagination slice
+  const paginatedHospitals = useMemo(() => {
+    return searchedHospitals.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE, 
+      currentPage * ITEMS_PER_PAGE
+    );
+  }, [searchedHospitals, currentPage]);
 
   return (
     <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
@@ -319,7 +328,10 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
             {FILTER_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
-                onClick={() => setFilterType(opt.id)}
+                onClick={() => {
+                  setFilterType(opt.id);
+                  setSearchQuery('');
+                }}
                 className={`text-xs font-bold px-3.5 py-2 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                   filterType === opt.id ? 'bg-blue-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                 }`}
@@ -341,6 +353,11 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
               className="w-full sm:w-64 text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 pl-8 focus:ring-2 focus:ring-blue-900"
             />
             <Stethoscope className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+            
+            {/* Tiny loading indicator to show background filtering is happening */}
+            {searchQuery !== deferredSearchQuery && (
+              <RefreshCw className="w-3.5 h-3.5 text-blue-500 animate-spin absolute right-3 top-2.5" />
+            )}
           </div>
         </div>
       </div>
@@ -468,7 +485,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
         </div>
       )}
 
-      {/* Back to Top Button */}
       {!csvLoading && hospitals.length > 0 && (
         <div className="flex justify-center pt-4 pb-8">
           <button
