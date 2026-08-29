@@ -2,17 +2,17 @@
 
 export const translations = {
   en: {
-    portalBadge: 'PM-JAY Seva Portal',
-    portalTitle: 'Ayushman Bharat',
-    portalSubtitle: 'Health Desk',
+    portalBadge: 'PM-JAY Digital Assistant',
+    portalTitle: 'Ayushman',
+    portalSubtitle: 'Acolyte',
     tollFree: 'Toll-Free:',
     languageToggle: 'हिंदी',
     
     // Page 1
     badgeText: 'Official Beneficiary Assistance Desk',
-    mainTitle: 'Ayushman Bharat',
-    mainTitleHighlight: 'Beneficiary Portal',
-    mainDesc: 'Choose an option below to find empaneled hospitals & surgeries, apply online via the official government portal, or watch the step-by-step video guide.',
+    mainTitle: 'Ayushman',
+    mainTitleHighlight: 'Acolyte Portal',
+    mainDesc: 'Your trusted healthcare companion to find empaneled hospitals, check covered surgeries, or apply online via the official PM-JAY portal.',
     
     // Card 1
     card1Badge: 'Card Holder',
@@ -53,17 +53,17 @@ export const translations = {
     backToStep1: 'Back to Step 1',
     p2HeaderBadge: 'Verified PM-JAY Network',
     p2Title: 'Nearby Empaneled Hospitals',
-    p2Desc: 'Automatically sorted by distance from your current GPS location with Ayushman Mitra help desk support.',
+    p2Desc: 'Live GPS tracked hospitals ranked in real time by distance from your coordinates with Ayushman Mitra desk.',
     
     // Location Permission Modal / Card
-    locDetecting: 'Detecting your GPS location...',
-    locGranted: 'GPS Location Active',
+    locDetecting: 'Tracking live GPS location...',
+    locGranted: 'Live GPS Coordinates Active',
     locDenied: 'GPS Permission Denied / Unavailable',
     locPromptTitle: 'Enable GPS Location Access',
-    locPromptDesc: 'Allow location access so we can automatically calculate exact distances and show the 10 nearest hospitals to you.',
-    locBtnAllow: 'Allow GPS Access',
-    locBtnManual: 'Use Current City Default (New Delhi / NCR)',
-    locAccuracyNote: 'High accuracy GPS used solely for distance calculation.',
+    locPromptDesc: 'Allow location permission so Ayushman Acolyte can track your exact GPS coordinates and show real hospitals nearest to you.',
+    locBtnAllow: 'Allow Location Permission',
+    locBtnManual: 'Use Selected City',
+    locAccuracyNote: 'High accuracy GPS is used solely for precise distance calculation.',
     
     // Filters
     filterLabel: 'Filter by Hospital Type:',
@@ -82,26 +82,26 @@ export const translations = {
     callHospital: 'Call',
     emergencyCall: 'Emergency',
     getDirections: 'Get Directions',
-    noHospitalsFound: 'No empaneled hospitals found for the selected filter.',
+    noHospitalsFound: 'No empaneled hospitals found matching your filter in this area.',
     
     // Footer
-    footerTitle: 'Ayushman Bharat Pradhan Mantri Jan Arogya Yojana (AB PM-JAY)',
-    footerSubtitle: 'National Health Authority Public Information Desk',
-    footerCopyright: '© 2026 Ayushman Bharat Digital Mission. All information aligned with official guidelines.',
+    footerTitle: 'Ayushman Acolyte | National Health Authority Public Assistance',
+    footerSubtitle: 'Ayushman Bharat Pradhan Mantri Jan Arogya Yojana (AB PM-JAY)',
+    footerCopyright: '© 2026 Ayushman Acolyte. All information aligned with official AB-PMJAY guidelines.',
     footerHelpline: 'Toll-Free 24x7 Helpline:'
   },
   hi: {
-    portalBadge: 'पीएम-जय सेवा पोर्टल',
-    portalTitle: 'आयुष्मान भारत',
-    portalSubtitle: 'स्वास्थ्य सहायता केंद्र',
+    portalBadge: 'पीएम-जय डिजिटल सहायक',
+    portalTitle: 'आयुष्मान',
+    portalSubtitle: 'एकाेलाइट (Acolyte)',
     tollFree: 'टोल-फ्री:',
     languageToggle: 'English',
     
     // Page 1
     badgeText: 'आधिकारिक लाभार्थी सहायता केंद्र',
-    mainTitle: 'आयुष्मान भारत',
-    mainTitleHighlight: 'लाभार्थी पोर्टल',
-    mainDesc: 'सूचीबद्ध अस्पताल और सर्जरी खोजने, आधिकारिक सरकारी पोर्टल से ऑनलाइन आवेदन करने, या वीडियो गाइड देखने के लिए नीचे दिए गए विकल्प चुनें।',
+    mainTitle: 'आयुष्मान',
+    mainTitleHighlight: 'एकाेलाइट पोर्टल',
+    mainDesc: 'सूचीबद्ध अस्पताल और सर्जरी खोजने, आधिकारिक सरकारी पोर्टल से ऑनलाइन आवेदन करने, या वीडियो गाइड देखने के लिए विकल्प चुनें।',
     
     // Card 1
     card1Badge: 'कार्ड धारक',
@@ -142,16 +142,16 @@ export const translations = {
     backToStep1: 'चरण 1 पर वापस जाएं',
     p2HeaderBadge: 'सत्यापित पीएम-जय नेटवर्क',
     p2Title: 'नजदीकी सूचीबद्ध अस्पताल',
-    p2Desc: 'आपके वर्तमान जीपीएस स्थान से दूरी के आधार पर क्रमित 10 सर्वश्रेष्ठ अस्पताल, आयुष्मान मित्र सहायता डेस्क सहित।',
+    p2Desc: 'आपके सटीक जीपीएस निर्देशांकों से दूरी के आधार पर क्रमित वास्तविक अस्पताल, आयुष्मान मित्र डेस्क सहित।',
     
     // Location Permission Modal / Card
-    locDetecting: 'आपका जीपीएस स्थान प्राप्त किया जा रहा है...',
-    locGranted: 'जीपीएस स्थान सक्रिय',
+    locDetecting: 'लाइव जीपीएस ट्रैक किया जा रहा है...',
+    locGranted: 'सक्रिय जीपीएस निर्देशांक',
     locDenied: 'जीपीएस अनुमति अस्वीकृत / अनुपलब्ध',
     locPromptTitle: 'जीपीएस स्थान अनुमति दें',
-    locPromptDesc: 'सटीक दूरी की गणना करने और आपके 10 सबसे नजदीकी सूचीबद्ध अस्पताल दिखाने के लिए कृपया लोकेशन की अनुमति दें।',
-    locBtnAllow: 'जीपीएस अनुमति दें',
-    locBtnManual: 'डिफ़ॉल्ट शहर का उपयोग करें (नई दिल्ली / एनसीआर)',
+    locPromptDesc: 'सटीक दूरी की गणना करने और आपके निकटतम वास्तविक अस्पताल दिखाने के लिए कृपया लोकेशन की अनुमति दें।',
+    locBtnAllow: 'लोकेशन अनुमति दें',
+    locBtnManual: 'चुने गए शहर का उपयोग करें',
     locAccuracyNote: 'सटीक जीपीएस का उपयोग केवल दूरी की गणना के लिए किया जाता है।',
     
     // Filters
@@ -170,13 +170,13 @@ export const translations = {
     specialtiesCovered: 'प्रमुख सर्जरी एवं विशेषज्ञताएं:',
     callHospital: 'कॉल करें',
     emergencyCall: 'आपातकालीन',
-    getDirections: 'रास्ता देखें (Maps)',
+    getDirections: 'रास्ता देखें (Google Maps)',
     noHospitalsFound: 'चुने गए फ़िल्टर के लिए कोई अस्पताल नहीं मिला।',
     
     // Footer
-    footerTitle: 'आयुष्मान भारत प्रधानमंत्री जन आरोग्य योजना (AB PM-JAY)',
-    footerSubtitle: 'राष्ट्रीय स्वास्थ्य प्राधिकरण जन सूचना केंद्र',
-    footerCopyright: '© 2026 आयुष्मान भारत डिजिटल मिशन। सभी जानकारी आधिकारिक दिशानिर्देशों के अनुरूप।',
+    footerTitle: 'आयुष्मान एकाेलाइट (Ayushman Acolyte) | राष्ट्रीय स्वास्थ्य सहायता',
+    footerSubtitle: 'आयुष्मान भारत प्रधानमंत्री जन आरोग्य योजना (AB PM-JAY)',
+    footerCopyright: '© 2026 आयुष्मान एकाेलाइट। सभी जानकारी आधिकारिक दिशानिर्देशों के अनुरूप।',
     footerHelpline: 'टोल-फ्री 24x7 हेल्पलाइन:'
   }
 };
