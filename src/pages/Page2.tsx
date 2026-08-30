@@ -20,7 +20,9 @@ import {
   Search,
   Check,
   Compass,
-  Globe
+  Globe,
+  ArrowRight,
+  Star
 } from 'lucide-react';
 import { Language, translations } from '../translations';
 import { Hospital } from '../data/hospitals';
@@ -30,11 +32,12 @@ import { fetchLiveOsmHospitals, getVerifiedRegionalHospitals } from '../utils/re
 interface Page2Props {
   language: Language;
   onBack: () => void;
+  onSelectHospital: (hospital: Hospital, userLocation: UserLocation) => void;
 }
 
 type FilterType = 'all' | 'government' | 'private';
 
-export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
+export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital }) => {
   const t = translations[language];
 
   // User GPS / Coordinates State
@@ -145,13 +148,9 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
     })
     .slice(0, 10);
 
-  // Exact Google Maps Directions & Search URLs using Real Coordinates
+  // Exact Google Maps Directions URL using Real Coordinates
   const getGoogleMapsDirUrl = (hosp: Hospital) => {
     return `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${hosp.lat},${hosp.lng}`;
-  };
-
-  const getGoogleMapsSearchUrl = (hosp: Hospital) => {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hosp.name + ', ' + hosp.address)}`;
   };
 
   const displayLocationString = userLocation.area && userLocation.city && userLocation.area.toLowerCase() !== userLocation.city.toLowerCase()
@@ -400,7 +399,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
               const distance = hosp.distanceKm ?? 1.2;
               const estDriveMins = Math.max(3, Math.round(distance * 2.5));
               const mapsDirUrl = getGoogleMapsDirUrl(hosp);
-              const mapsSearchUrl = getGoogleMapsSearchUrl(hosp);
               const isGovt = hosp.type === 'government';
 
               return (
@@ -437,19 +435,17 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
                         </span>
                       </div>
 
-                      {/* Hospital Name (Clickable directly to Google Maps) */}
-                      <a
-                        href={mapsSearchUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group/name inline-flex items-center gap-1.5 text-base sm:text-lg font-extrabold text-slate-900 hover:text-blue-900 pt-0.5 transition-colors cursor-pointer"
-                        title="Click to view hospital profile & location in Google Maps"
+                      {/* Hospital Name (Clicking redirects to Page 3) */}
+                      <button
+                        onClick={() => onSelectHospital(hosp, userLocation)}
+                        className="group/name text-left inline-flex items-center gap-1.5 text-base sm:text-lg font-extrabold text-slate-900 hover:text-blue-900 pt-0.5 transition-colors cursor-pointer"
+                        title="Click to view hospital profile & patient reviews (Page 3)"
                       >
                         <span className="group-hover/name:underline decoration-blue-900 decoration-2 underline-offset-2">
                           {language === 'hi' ? (hosp.nameHi || hosp.name) : hosp.name}
                         </span>
-                        <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover/name:text-blue-900 shrink-0" />
-                      </a>
+                        <ArrowRight className="w-4 h-4 text-blue-900 group-hover/name:translate-x-0.5 transition-transform shrink-0" />
+                      </button>
 
                       {/* Address, Real Coordinates & Beds */}
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
@@ -499,9 +495,19 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
                     </div>
                   </div>
 
-                  {/* Action Buttons: Directions, Call, Emergency */}
+                  {/* Action Buttons: View Details (Page 3), Directions, Call, Emergency */}
                   <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
                     <div className="flex flex-wrap items-center gap-2">
+                      {/* View Details & Reviews (Page 3) */}
+                      <button
+                        onClick={() => onSelectHospital(hosp, userLocation)}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-900 bg-blue-50 hover:bg-blue-100/80 border border-blue-200/90 px-3.5 py-1.5 rounded-xl shadow-2xs transition-all cursor-pointer"
+                      >
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        <span>{t.viewDetailsCta}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+
                       {/* Call Hospital */}
                       <a
                         href={`tel:${hosp.phone}`}
@@ -521,7 +527,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
                       </a>
                     </div>
 
-                    {/* Get Directions (Google Maps Direct Navigation from User Lat/Lng to Hospital Lat/Lng) */}
+                    {/* Get Directions (Google Maps Direct Navigation) */}
                     <a
                       href={mapsDirUrl}
                       target="_blank"

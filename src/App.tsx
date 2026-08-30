@@ -1,16 +1,35 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Page1 } from './pages/Page1';
 import { Page2 } from './pages/Page2';
+import { Page3 } from './pages/Page3';
 import { Language } from './translations';
+import { Hospital, baseHospitals } from './data/hospitals';
+import { UserLocation } from './utils/location';
 
 export const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'page1' | 'page2'>('page1');
+  const [currentPage, setCurrentPage] = useState<'page1' | 'page2' | 'page3'>('page1');
   const [language, setLanguage] = useState<Language>('en');
+  const [selectedHospital, setSelectedHospital] = useState<Hospital>(baseHospitals[0]);
+  const [userLocation, setUserLocation] = useState<UserLocation>({
+    lat: 21.1904,
+    lng: 81.2849,
+    area: 'Padmanabhpur',
+    city: 'Durg',
+    state: 'Chhattisgarh',
+    source: 'gps'
+  });
 
   const toggleLanguage = () => {
     setLanguage(prev => (prev === 'en' ? 'hi' : 'en'));
+  };
+
+  const handleSelectHospital = (hosp: Hospital, loc: UserLocation) => {
+    setSelectedHospital(hosp);
+    setUserLocation(loc);
+    setCurrentPage('page3');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -18,18 +37,42 @@ export const App: React.FC = () => {
       <Header 
         language={language}
         onToggleLanguage={toggleLanguage}
-        onHomeClick={() => setCurrentPage('page1')} 
+        onHomeClick={() => {
+          setCurrentPage('page1');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }} 
       />
       
-      {currentPage === 'page1' ? (
+      {currentPage === 'page1' && (
         <Page1 
           language={language}
-          onHaveCard={() => setCurrentPage('page2')} 
+          onHaveCard={() => {
+            setCurrentPage('page2');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }} 
         />
-      ) : (
+      )}
+
+      {currentPage === 'page2' && (
         <Page2 
           language={language}
-          onBack={() => setCurrentPage('page1')} 
+          onBack={() => {
+            setCurrentPage('page1');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onSelectHospital={handleSelectHospital}
+        />
+      )}
+
+      {currentPage === 'page3' && (
+        <Page3
+          hospital={selectedHospital}
+          userLocation={userLocation}
+          language={language}
+          onBack={() => {
+            setCurrentPage('page2');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
         />
       )}
 
