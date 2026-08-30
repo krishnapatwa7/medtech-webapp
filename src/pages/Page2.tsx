@@ -105,6 +105,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
   const [isListening, setIsListening] = useState<boolean>(false);
   const [aiProcessing, setAiProcessing] = useState<boolean>(false);
   const [isEmergency, setIsEmergency] = useState<boolean>(false);
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -288,7 +289,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
     }
   };
 
-  // --- AI-CONTROLLED STATEFUL FILTERING, TRIAGE & LOCATION ---
   const processAudioWithGemini = async (base64Audio: string, mimeType: string) => {
     setAiProcessing(true);
     try {
@@ -382,7 +382,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
       // 4. Handle Keyword Wipe / Update
       if (typeof parsedData.keyword === 'string') {
         const cleanKeyword = parsedData.keyword.toLowerCase() === 'unknown' ? '' : parsedData.keyword.trim();
-        setSearchQuery(cleanKeyword); // This will clear the bar if the AI says "" (empty string)
+        setSearchQuery(cleanKeyword); 
         if (cleanKeyword !== '') aiUnderstoodSomething = true;
       }
 
@@ -500,14 +500,14 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
       {/* Filters and Search Bar Container */}
       <div className="bg-slate-100 border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         
-        {/* Filter Buttons - Now keeps searchQuery intact */}
+        {/* Filter Buttons */}
         <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
           {FILTER_OPTIONS.map((opt) => (
             <button
               key={opt.id}
               onClick={() => {
                 setFilterType(opt.id);
-                setCurrentPage(1); // Notice: we DO NOT clear searchQuery here anymore!
+                setCurrentPage(1); 
               }}
               className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                 filterType === opt.id 
@@ -520,8 +520,8 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
           ))}
         </div>
 
-        {/* Search input with Clear (X) and Voice AI buttons */}
-        <div className="relative shrink-0 w-full sm:w-[350px] xl:w-auto">
+        {/* Search input with Clear (X) and Mic buttons */}
+        <div className="relative shrink-0 w-full sm:w-[400px] xl:w-auto">
           <input
             type="text"
             placeholder={isListening ? (language === 'hi' ? 'सुन रहा हूँ... रोकने के लिए टैप करें' : 'Listening... click mic to stop') : (language === 'hi' ? 'अस्पताल या सर्जरी खोजें...' : 'Search hospital or surgery...')}
@@ -531,13 +531,14 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
               setCurrentPage(1);
             }}
             readOnly={isListening}
-            className={`w-full sm:w-[350px] text-sm bg-white border rounded-xl py-2.5 pl-10 pr-20 focus:outline-none shadow-2xs transition-colors ${
+            className={`w-full sm:w-[400px] text-sm bg-white border rounded-xl py-2.5 pl-10 pr-20 focus:outline-none shadow-2xs transition-colors ${
               isListening ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50' : 'border-slate-200 focus:ring-2 focus:ring-blue-900'
             } placeholder:text-slate-400`}
           />
           <Stethoscope className={`w-4 h-4 absolute left-3.5 top-3 ${isListening ? 'text-rose-500' : 'text-slate-400'}`} />
           
           <div className="absolute right-2 top-1.5 flex items-center gap-1">
+            
             {/* Clear Button (X) */}
             {searchQuery && !isListening && (
               <button
@@ -546,7 +547,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
                   setSearchQuery('');
                   setCurrentPage(1);
                 }}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
                 title={language === 'hi' ? 'हटाएं' : 'Clear search'}
               >
                 <X className="w-4 h-4" />
@@ -556,7 +557,8 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
             {/* Mic / Stop / Processing Button */}
             <button 
               onClick={toggleRecording}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+              disabled={aiProcessing}
+              className={`p-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-50 ${
                 isListening 
                   ? 'bg-rose-600 text-white animate-pulse shadow-md' 
                   : 'bg-slate-100 text-blue-900 hover:bg-blue-900 hover:text-white border border-slate-200'
