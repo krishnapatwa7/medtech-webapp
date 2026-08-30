@@ -288,7 +288,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
     }
   };
 
-  // --- AI-CONTROLLED STATEFUL FILTERING & TRIAGE ---
+  // --- AI-CONTROLLED STATEFUL FILTERING, TRIAGE & LOCATION ---
   const processAudioWithGemini = async (base64Audio: string, mimeType: string) => {
     setAiProcessing(true);
     try {
@@ -296,34 +296,29 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
       const targetModel = 'models/gemini-flash-lite-latest';
 
       const prompt = `
-        You are an intelligent medical triage and UI filter extractor for an Indian PM-JAY hospital search application.
+        You are an intelligent medical triage and UI controller for an Indian PM-JAY hospital app.
         Analyze the user's spoken audio (which could be in Hindi, English, Hinglish, or regional dialects).
 
         TASKS:
-        1. Check for life-threatening emergencies (heart attack, massive bleeding, stroke, collapse, severe road accident, extreme breathlessness).
-        2. Extract the medical specialty/surgery keyword in standard English (e.g., Cardiology, Orthopedics, Ophthalmology, Oncology, Pediatrics, General Surgery, ENT, Neurology, Nephrology, etc.).
-        3. Detect if the user specified hospital type preferences:
-           - Government/Sarkari -> "GOV"
-           - Private/Private hospital/Niji -> "PRIVATE"
-           - NABH accredited -> "NABH_Accredited"
-           - Suspended -> "SUSPENDED"
-           - Blacklisted -> "BLACKLISTED"
-           - De-empaneled -> "DE-EMPANELED"
-           - If not specified, use null.
+        1. EMERGENCY CHECK: Check for life-threatening emergencies (heart attack, massive bleeding, stroke, collapse, severe accidents).
+        2. DISEASE/SPECIALTY: Extract the medical specialty/surgery keyword (e.g., Cardiology, Orthopedics, Oncology). 
+           CRITICAL: If NO specific disease or specialty is mentioned, output an empty string "".
+        3. UI FILTER: Detect hospital preferences: "GOV", "PRIVATE", "NABH_Accredited", "SUSPENDED", "BLACKLISTED", "DE-EMPANELED". Otherwise, output null.
+        4. LOCATION: Detect if the user mentioned a specific city or town (e.g., "Pune", "Delhi", "Patna"). Output the city name. Otherwise, output null.
 
         Output ONLY valid JSON format with this exact structure:
         {
           "isEmergency": boolean,
           "keyword": string,
-          "filter": "GOV" | "PRIVATE" | "NABH_Accredited" | "DE-EMPANELED" | "SUSPENDED" | "BLACKLISTED" | null
+          "filter": "GOV" | "PRIVATE" | "NABH_Accredited" | "DE-EMPANELED" | "SUSPENDED" | "BLACKLISTED" | null,
+          "location": string | null
         }
 
         Examples:
-        - "मुझे सीने में बहुत तेज दर्द हो रहा है" -> {"isEmergency": true, "keyword": "", "filter": null}
-        - "सरकारी अस्पताल में दिल का डॉक्टर" -> {"isEmergency": false, "keyword": "Cardiology", "filter": "GOV"}
-        - "Private eye hospital near me" -> {"isEmergency": false, "keyword": "Ophthalmology", "filter": "PRIVATE"}
-        - "हड्डियों का इलाज" -> {"isEmergency": false, "keyword": "Orthopedics", "filter": null}
-        - "NABH accredited cancer hospital" -> {"isEmergency": false, "keyword": "Oncology", "filter": "NABH_Accredited"}
+        - "मुझे सीने में बहुत तेज दर्द हो रहा है" -> {"isEmergency": true, "keyword": "", "filter": null, "location": null}
+        - "पुणे में सरकारी अस्पताल में दिल का डॉक्टर" -> {"isEmergency": false, "keyword": "Cardiology", "filter": "GOV", "location": "Pune"}
+        - "Private eye hospital" -> {"isEmergency": false, "keyword": "Ophthalmology", "filter": "PRIVATE", "location": null}
+        - "Show me government hospitals in Patna" -> {"isEmergency": false, "keyword": "", "filter": "GOV", "location": "Patna"}
 
         Do not include markdown fences (like \`\`\`json). Output pure raw JSON only.
       `;
@@ -347,29 +342,55 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
 
       const data = await response.json();
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '{}';
-      
-      // Sanitize JSON response in case backticks were included
       const cleanJsonString = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
       const parsedData = JSON.parse(cleanJsonString);
 
+      // 1. Check Emergency
       if (parsedData.isEmergency) {
         setIsEmergency(true);
         setSearchQuery('');
         return;
       }
 
-      // 1. Apply UI Filter if recognized
-      if (parsedData.filter && ['GOV', 'PRIVATE', 'NABH_Accredited', 'DE-EMPANELED', 'SUSPENDED', 'BLACKLISTED'].includes(parsedData.filter)) {
-        setFilterType(parsedData.filter as FilterType);
+      let aiUnderstoodSomething = false;
+
+      // 2. Handle Location Update automatically via OpenStreetMap API
+      if (parsedData.location) {
+        aiUnderstoodSomething = true;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(parsedData.location)}&countrycodes=in&limit=1`);
+          const locData = await res.json();
+          if (locData && locData.length > 0) {
+            setUserLocation({
+              lat: parseFloat(locData[0].lat),
+              lng: parseFloat(locData[0].lon),
+              city: parsedData.location.charAt(0).toUpperCase() + parsedData.location.slice(1),
+              source: 'manual'
+            });
+          }
+        } catch (e) {
+          console.error("Failed to fetch new location coords", e);
+        }
       }
 
-      // 2. Set the search keyword
-      if (parsedData.keyword && parsedData.keyword.toLowerCase() !== 'unknown' && parsedData.keyword.trim() !== '') {
-        setSearchQuery(parsedData.keyword.trim());
-        setCurrentPage(1);
-      } else if (!parsedData.filter) {
+      // 3. Handle Filters
+      if (parsedData.filter && ['GOV', 'PRIVATE', 'NABH_Accredited', 'DE-EMPANELED', 'SUSPENDED', 'BLACKLISTED'].includes(parsedData.filter)) {
+        setFilterType(parsedData.filter as FilterType);
+        aiUnderstoodSomething = true;
+      }
+
+      // 4. Handle Keyword Wipe / Update
+      if (typeof parsedData.keyword === 'string') {
+        const cleanKeyword = parsedData.keyword.toLowerCase() === 'unknown' ? '' : parsedData.keyword.trim();
+        setSearchQuery(cleanKeyword); // This will clear the bar if the AI says "" (empty string)
+        if (cleanKeyword !== '') aiUnderstoodSomething = true;
+      }
+
+      if (!aiUnderstoodSomething) {
         setSearchQuery(language === 'hi' ? 'आवाज़ साफ नहीं थी, फिर से प्रयास करें...' : 'Audio unclear, try again...');
         setTimeout(() => setSearchQuery(''), 2500);
+      } else {
+        setCurrentPage(1);
       }
       
     } catch (error) {
@@ -479,14 +500,14 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
       {/* Filters and Search Bar Container */}
       <div className="bg-slate-100 border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         
-        {/* Filter Buttons - Now keeps searchQuery unchanged */}
+        {/* Filter Buttons - Now keeps searchQuery intact */}
         <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
           {FILTER_OPTIONS.map((opt) => (
             <button
               key={opt.id}
               onClick={() => {
                 setFilterType(opt.id);
-                setCurrentPage(1);
+                setCurrentPage(1); // Notice: we DO NOT clear searchQuery here anymore!
               }}
               className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                 filterType === opt.id 
