@@ -4,7 +4,7 @@ import {
   ArrowLeft, MapPin, Navigation, Phone, Building2, ShieldCheck, 
   CheckCircle, RefreshCw, AlertCircle, Stethoscope, ChevronDown, 
   LocateFixed, Search, ChevronLeft, ChevronRight, ExternalLink, ArrowUp,
-  Mic, Square
+  Mic, Square, AlertTriangle, X
 } from 'lucide-react';
 import { Language, translations } from '../translations';
 import { detectLocation, getBrowserGPS, getCityFromCoords, UserLocation } from '../utils/location';
@@ -101,8 +101,10 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const ITEMS_PER_PAGE = 20;
 
+  // AI & Audio States
   const [isListening, setIsListening] = useState<boolean>(false);
   const [aiProcessing, setAiProcessing] = useState<boolean>(false);
+  const [isEmergency, setIsEmergency] = useState<boolean>(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -286,100 +288,132 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
     }
   };
 
-  // SELF-HEALING FETCH IMPLEMENTATION
+  // --- AI-CONTROLLED STATEFUL FILTERING & TRIAGE ---
   const processAudioWithGemini = async (base64Audio: string, mimeType: string) => {
     setAiProcessing(true);
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-      // 1. Ask Google what models your specific API key has access to
-      const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-      if (!modelsRes.ok) throw new Error("Failed to authenticate API Key with Google");
-      
-      const modelsData = await modelsRes.json();
-      let targetModel = 'models/gemini-1.5-flash'; // Fallback
-      
-      // 2. Scan the allowed list and grab the first valid Gemini 1.5/2.0 model
-      if (modelsData && modelsData.models) {
-        const availableModels = modelsData.models;
-        const validModel = availableModels.find((m: any) => 
-          m.name.includes('gemini') && 
-          m.supportedGenerationMethods.includes('generateContent') &&
-          (m.name.includes('1.5') || m.name.includes('2.0'))
-        );
-        if (validModel) {
-          targetModel = validModel.name; 
-          console.log("Self-Healed: Using allowed model ->", targetModel);
-        }
-      }
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim();
+      const targetModel = 'models/gemini-flash-lite-latest';
 
       const prompt = `
-        You are an intelligent medical keyword extractor for a PM-JAY hospital app.
-        Listen to the attached audio recording from the user. They might speak in Hindi, English, Hinglish, or a regional dialect.
-        
-        Figure out what medical specialty, treatment, or hospital they need.
-        Translate their intent into a single, professional English medical keyword.
-        
-        Examples of what you might hear:
-        - "मुझे दिल के डॉक्टर से मिलना है" -> Cardiology
-        - "हड्डियों का इलाज कहाँ होगा" -> Orthopedics
-        - "I need an eye specialist" -> Ophthalmology
-        - "पेट में दर्द है" -> Gastroenterology
-        
-        Return ONLY the English keyword. No quotes, no periods, no explanations. 
-        If the audio is completely silent or unrecognizable, return exactly this word: Unknown
+        You are an intelligent medical triage and UI filter extractor for an Indian PM-JAY hospital search application.
+        Analyze the user's spoken audio (which could be in Hindi, English, Hinglish, or regional dialects).
+
+        TASKS:
+        1. Check for life-threatening emergencies (heart attack, massive bleeding, stroke, collapse, severe road accident, extreme breathlessness).
+        2. Extract the medical specialty/surgery keyword in standard English (e.g., Cardiology, Orthopedics, Ophthalmology, Oncology, Pediatrics, General Surgery, ENT, Neurology, Nephrology, etc.).
+        3. Detect if the user specified hospital type preferences:
+           - Government/Sarkari -> "GOV"
+           - Private/Private hospital/Niji -> "PRIVATE"
+           - NABH accredited -> "NABH_Accredited"
+           - Suspended -> "SUSPENDED"
+           - Blacklisted -> "BLACKLISTED"
+           - De-empaneled -> "DE-EMPANELED"
+           - If not specified, use null.
+
+        Output ONLY valid JSON format with this exact structure:
+        {
+          "isEmergency": boolean,
+          "keyword": string,
+          "filter": "GOV" | "PRIVATE" | "NABH_Accredited" | "DE-EMPANELED" | "SUSPENDED" | "BLACKLISTED" | null
+        }
+
+        Examples:
+        - "मुझे सीने में बहुत तेज दर्द हो रहा है" -> {"isEmergency": true, "keyword": "", "filter": null}
+        - "सरकारी अस्पताल में दिल का डॉक्टर" -> {"isEmergency": false, "keyword": "Cardiology", "filter": "GOV"}
+        - "Private eye hospital near me" -> {"isEmergency": false, "keyword": "Ophthalmology", "filter": "PRIVATE"}
+        - "हड्डियों का इलाज" -> {"isEmergency": false, "keyword": "Orthopedics", "filter": null}
+        - "NABH accredited cancer hospital" -> {"isEmergency": false, "keyword": "Oncology", "filter": "NABH_Accredited"}
+
+        Do not include markdown fences (like \`\`\`json). Output pure raw JSON only.
       `;
 
-      // 3. Perform the exact audio extraction using the dynamically discovered model
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${targetModel}:generateContent?key=${apiKey}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{
             parts: [
               { text: prompt },
-              {
-                inlineData: {
-                  mimeType: mimeType,
-                  data: base64Audio
-                }
-              }
+              { inlineData: { mimeType: mimeType, data: base64Audio } }
             ]
           }]
         })
       });
 
       if (!response.ok) {
-        const errText = await response.text();
-        console.error("Gemini API Error Details:", errText);
         throw new Error(`Google API returned status: ${response.status}`);
       }
 
       const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '{}';
       
-      const extractedKeyword = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'Unknown';
-      
-      if (extractedKeyword !== 'Unknown' && extractedKeyword !== '') {
-        setSearchQuery(extractedKeyword);
+      // Sanitize JSON response in case backticks were included
+      const cleanJsonString = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const parsedData = JSON.parse(cleanJsonString);
+
+      if (parsedData.isEmergency) {
+        setIsEmergency(true);
+        setSearchQuery('');
+        return;
+      }
+
+      // 1. Apply UI Filter if recognized
+      if (parsedData.filter && ['GOV', 'PRIVATE', 'NABH_Accredited', 'DE-EMPANELED', 'SUSPENDED', 'BLACKLISTED'].includes(parsedData.filter)) {
+        setFilterType(parsedData.filter as FilterType);
+      }
+
+      // 2. Set the search keyword
+      if (parsedData.keyword && parsedData.keyword.toLowerCase() !== 'unknown' && parsedData.keyword.trim() !== '') {
+        setSearchQuery(parsedData.keyword.trim());
         setCurrentPage(1);
-      } else {
+      } else if (!parsedData.filter) {
         setSearchQuery(language === 'hi' ? 'आवाज़ साफ नहीं थी, फिर से प्रयास करें...' : 'Audio unclear, try again...');
         setTimeout(() => setSearchQuery(''), 2500);
       }
       
     } catch (error) {
       console.error("Gemini AI Processing failed", error);
-      alert("AI Processing Failed. Check your API Key or Network.");
+      alert("AI Processing Failed. Check your console logs.");
     } finally {
       setAiProcessing(false);
     }
   };
 
   return (
-    <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+    <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 relative">
       
+      {/* Emergency Overlay */}
+      {isEmergency && (
+        <div className="fixed inset-0 z-[100] bg-red-600 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
+          <AlertTriangle className="w-24 h-24 sm:w-32 sm:h-32 text-white mb-6 animate-pulse" />
+          <h1 className="text-4xl sm:text-6xl font-black text-white mb-4 tracking-tight uppercase shadow-sm">
+            {language === 'hi' ? 'मेडिकल इमरजेंसी!' : 'Medical Emergency!'}
+          </h1>
+          <p className="text-lg sm:text-2xl text-red-100 font-semibold mb-12 max-w-2xl px-4">
+            {language === 'hi'
+              ? 'आपके लक्षणों के आधार पर, यह एक गंभीर आपात स्थिति प्रतीत होती है। कृपया तुरंत एम्बुलेंस बुलाएं!'
+              : 'Based on your symptoms, this appears to be a critical life-threatening emergency. Please call an ambulance immediately!'}
+          </p>
+          
+          <a 
+            href="tel:108" 
+            className="bg-white text-red-600 text-4xl sm:text-5xl font-black px-12 py-6 rounded-full shadow-[0_0_60px_rgba(255,255,255,0.4)] hover:scale-105 transition-transform flex items-center gap-4 mb-10"
+          >
+            <Phone className="w-10 h-10 sm:w-12 sm:h-12 fill-current animate-bounce" />
+            {language === 'hi' ? '108 डायल करें' : 'DIAL 108 NOW'}
+          </a>
+
+          <button 
+            onClick={() => setIsEmergency(false)} 
+            className="text-white border-2 border-red-400 hover:bg-red-700 hover:border-red-300 px-6 py-3 rounded-full font-bold transition-all cursor-pointer"
+          >
+            {language === 'hi' ? 'यह आपातकाल नहीं है (रद्द करें)' : 'Not an emergency (Cancel)'}
+          </button>
+        </div>
+      )}
+
+      {/* Top Location Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <button onClick={onBack} className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-blue-900 bg-white hover:bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer w-fit">
           <ArrowLeft className="w-4 h-4" />
@@ -428,6 +462,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
         </div>
       </div>
 
+      {/* Header Info */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-1">
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{language === 'hi' ? 'पीएम-जय अस्पताल डेटाबेस' : 'PM-JAY Hospital Database'}</h2>
@@ -441,14 +476,16 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
         </div>
       </div>
 
+      {/* Filters and Search Bar Container */}
       <div className="bg-slate-100 border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        
+        {/* Filter Buttons - Now keeps searchQuery unchanged */}
         <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
           {FILTER_OPTIONS.map((opt) => (
             <button
               key={opt.id}
               onClick={() => {
                 setFilterType(opt.id);
-                setSearchQuery('');
                 setCurrentPage(1);
               }}
               className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
@@ -462,6 +499,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
           ))}
         </div>
 
+        {/* Search input with Clear (X) and Voice AI buttons */}
         <div className="relative shrink-0 w-full sm:w-[350px] xl:w-auto">
           <input
             type="text"
@@ -472,29 +510,47 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
               setCurrentPage(1);
             }}
             readOnly={isListening}
-            className={`w-full sm:w-[350px] text-sm bg-white border rounded-xl py-2.5 pl-10 pr-12 focus:outline-none shadow-2xs transition-colors ${
+            className={`w-full sm:w-[350px] text-sm bg-white border rounded-xl py-2.5 pl-10 pr-20 focus:outline-none shadow-2xs transition-colors ${
               isListening ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50' : 'border-slate-200 focus:ring-2 focus:ring-blue-900'
             } placeholder:text-slate-400`}
           />
           <Stethoscope className={`w-4 h-4 absolute left-3.5 top-3 ${isListening ? 'text-rose-500' : 'text-slate-400'}`} />
           
-          <button 
-            onClick={toggleRecording}
-            className={`absolute right-2 top-1.5 p-1.5 rounded-lg transition-all cursor-pointer ${
-              isListening 
-                ? 'bg-rose-600 text-white animate-pulse shadow-md' 
-                : 'bg-slate-100 text-blue-900 hover:bg-blue-900 hover:text-white border border-slate-200'
-            }`}
-            title={language === 'hi' ? 'आवाज़ से खोजें (AI)' : 'AI Voice Search'}
-          >
-            {aiProcessing ? (
-              <RefreshCw className="w-4 h-4 animate-spin text-blue-500" />
-            ) : isListening ? (
-              <Square className="w-4 h-4 fill-current" />
-            ) : (
-              <Mic className="w-4 h-4" />
+          <div className="absolute right-2 top-1.5 flex items-center gap-1">
+            {/* Clear Button (X) */}
+            {searchQuery && !isListening && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setCurrentPage(1);
+                }}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                title={language === 'hi' ? 'हटाएं' : 'Clear search'}
+              >
+                <X className="w-4 h-4" />
+              </button>
             )}
-          </button>
+
+            {/* Mic / Stop / Processing Button */}
+            <button 
+              onClick={toggleRecording}
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                isListening 
+                  ? 'bg-rose-600 text-white animate-pulse shadow-md' 
+                  : 'bg-slate-100 text-blue-900 hover:bg-blue-900 hover:text-white border border-slate-200'
+              }`}
+              title={language === 'hi' ? 'आवाज़ से खोजें (AI)' : 'AI Voice Search'}
+            >
+              {aiProcessing ? (
+                <RefreshCw className="w-4 h-4 animate-spin text-blue-500" />
+              ) : isListening ? (
+                <Square className="w-4 h-4 fill-current" />
+              ) : (
+                <Mic className="w-4 h-4" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -504,6 +560,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
         <div className="h-px bg-slate-200 flex-1"></div>
       </div>
 
+      {/* Hospital Results */}
       <div className="space-y-4">
         {csvLoading ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-12 flex flex-col items-center justify-center space-y-3">
@@ -605,6 +662,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
         )}
       </div>
 
+      {/* Pagination */}
       {!csvLoading && totalPages > 1 && (
         <div className="flex items-center justify-between bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <button 
@@ -629,6 +687,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
         </div>
       )}
 
+      {/* Back to Top */}
       {!csvLoading && hospitals.length > 0 && (
         <div className="flex justify-center pt-4 pb-8">
           <button
