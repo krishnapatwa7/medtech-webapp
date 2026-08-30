@@ -101,10 +101,11 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const ITEMS_PER_PAGE = 20;
 
-  // AI & Audio States
+  // AI, Audio & TTS States
   const [isListening, setIsListening] = useState<boolean>(false);
   const [aiProcessing, setAiProcessing] = useState<boolean>(false);
   const [isEmergency, setIsEmergency] = useState<boolean>(false);
+  const [pendingTts, setPendingTts] = useState<{ keyword: string } | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -237,6 +238,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
 
     return hospitals.filter(hosp => {
       const mappedSpecialties = hosp.specialties.map(code => (specialtyMap[code] || code).toLowerCase()).join(' ');
+      // Notice: we are checking if the term matches the hospital name OR the specialty
       return hosp.name.toLowerCase().includes(term) || mappedSpecialties.includes(term);
     });
   }, [hospitals, deferredSearchQuery, specialtyMap]);
@@ -246,6 +248,47 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
     return searchedHospitals.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   }, [searchedHospitals, currentPage]);
 
+  // --- TEXT TO SPEECH EFFECT ---
+  useEffect(() => {
+    if (pendingTts && !csvLoading && !aiProcessing && 'speechSynthesis' in window) {
+      
+      const term = pendingTts.keyword.toLowerCase();
+      const matchingHospitals = hospitals.filter(hosp => {
+        const mappedSpecialties = hosp.specialties.map(code => (specialtyMap[code] || code).toLowerCase()).join(' ');
+        return hosp.name.toLowerCase().includes(term) || mappedSpecialties.includes(term);
+      });
+
+      const count = matchingHospitals.length;
+      const topHosp = count > 0 ? matchingHospitals[0] : null;
+      let speechText = '';
+
+      if (language === 'hi') {
+        const spokenSubject = pendingTts.keyword || 'इस खोज';
+        if (count === 0) {
+          speechText = `क्षमा करें, मुझे ${spokenSubject} के लिए कोई अस्पताल नहीं मिला।`;
+        } else {
+          speechText = `मुझे ${spokenSubject} के लिए ${count} अस्पताल मिले हैं। सबसे करीब ${topHosp?.nameHi} है।`;
+        }
+      } else {
+        const spokenSubject = pendingTts.keyword || 'this search';
+        if (count === 0) {
+          speechText = `Sorry, I couldn't find any results for ${spokenSubject}.`;
+        } else {
+          speechText = `I found ${count} hospitals for ${spokenSubject}. The closest is ${topHosp?.name}.`;
+        }
+      }
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(speechText);
+      utterance.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
+      window.speechSynthesis.speak(utterance);
+
+      setPendingTts(null);
+    }
+  }, [pendingTts, csvLoading, aiProcessing, hospitals, specialtyMap, language]);
+
+
+  // --- AUDIO LOGIC ---
   const toggleRecording = async () => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
@@ -260,6 +303,10 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
     }
 
     try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
@@ -301,8 +348,8 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
 
         TASKS:
         1. EMERGENCY CHECK: Check for life-threatening emergencies (heart attack, massive bleeding, stroke, collapse, severe accidents).
-        2. DISEASE/SPECIALTY: Extract the medical specialty/surgery keyword (e.g., Cardiology, Orthopedics, Oncology). 
-           CRITICAL: If NO specific disease or specialty is mentioned, output an empty string "".
+        2. KEYWORD (DISEASE/SPECIALTY/HOSPITAL NAME): Extract the medical specialty, surgery, OR the specific name of a hospital the user is asking for (e.g., Cardiology, Orthopedics, Apollo, AIIMS, Fortis). 
+           CRITICAL: If NO specific disease, specialty, or hospital name is mentioned, output an empty string "".
         3. UI FILTER: Detect hospital preferences: "GOV", "PRIVATE", "NABH_Accredited", "SUSPENDED", "BLACKLISTED", "DE-EMPANELED". Otherwise, output null.
         4. LOCATION: Detect if the user mentioned a specific city or town (e.g., "Pune", "Delhi", "Patna"). Output the city name. Otherwise, output null.
 
@@ -317,7 +364,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
         Examples:
         - "मुझे सीने में बहुत तेज दर्द हो रहा है" -> {"isEmergency": true, "keyword": "", "filter": null, "location": null}
         - "पुणे में सरकारी अस्पताल में दिल का डॉक्टर" -> {"isEmergency": false, "keyword": "Cardiology", "filter": "GOV", "location": "Pune"}
-        - "Private eye hospital" -> {"isEmergency": false, "keyword": "Ophthalmology", "filter": "PRIVATE", "location": null}
+        - "अपोलो अस्पताल खोजें" -> {"isEmergency": false, "keyword": "Apollo", "filter": null, "location": null}
         - "Show me government hospitals in Patna" -> {"isEmergency": false, "keyword": "", "filter": "GOV", "location": "Patna"}
 
         Do not include markdown fences (like \`\`\`json). Output pure raw JSON only.
@@ -345,16 +392,24 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
       const cleanJsonString = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
       const parsedData = JSON.parse(cleanJsonString);
 
-      // 1. Check Emergency
       if (parsedData.isEmergency) {
         setIsEmergency(true);
         setSearchQuery('');
+        
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const emergencyText = language === 'hi' 
+            ? 'मेडिकल इमरजेंसी! कृपया तुरंत एक सौ आठ पर कॉल करें।' 
+            : 'Medical Emergency detected! Please call one zero eight immediately.';
+          const utterance = new SpeechSynthesisUtterance(emergencyText);
+          utterance.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
+          window.speechSynthesis.speak(utterance);
+        }
         return;
       }
 
       let aiUnderstoodSomething = false;
 
-      // 2. Handle Location Update automatically via OpenStreetMap API
       if (parsedData.location) {
         aiUnderstoodSomething = true;
         try {
@@ -373,17 +428,17 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
         }
       }
 
-      // 3. Handle Filters
       if (parsedData.filter && ['GOV', 'PRIVATE', 'NABH_Accredited', 'DE-EMPANELED', 'SUSPENDED', 'BLACKLISTED'].includes(parsedData.filter)) {
         setFilterType(parsedData.filter as FilterType);
         aiUnderstoodSomething = true;
       }
 
-      // 4. Handle Keyword Wipe / Update
       if (typeof parsedData.keyword === 'string') {
         const cleanKeyword = parsedData.keyword.toLowerCase() === 'unknown' ? '' : parsedData.keyword.trim();
         setSearchQuery(cleanKeyword); 
         if (cleanKeyword !== '') aiUnderstoodSomething = true;
+        
+        setPendingTts({ keyword: cleanKeyword });
       }
 
       if (!aiUnderstoodSomething) {
@@ -426,7 +481,10 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
           </a>
 
           <button 
-            onClick={() => setIsEmergency(false)} 
+            onClick={() => {
+              setIsEmergency(false);
+              if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            }} 
             className="text-white border-2 border-red-400 hover:bg-red-700 hover:border-red-300 px-6 py-3 rounded-full font-bold transition-all cursor-pointer"
           >
             {language === 'hi' ? 'यह आपातकाल नहीं है (रद्द करें)' : 'Not an emergency (Cancel)'}
@@ -531,7 +589,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
               setCurrentPage(1);
             }}
             readOnly={isListening}
-            className={`w-full sm:w-[400px] text-sm bg-white border rounded-xl py-2.5 pl-10 pr-20 focus:outline-none shadow-2xs transition-colors ${
+            className={`w-full sm:w-[400px] text-sm bg-white border rounded-xl py-2.5 pl-10 pr-[72px] focus:outline-none shadow-2xs transition-colors ${
               isListening ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50' : 'border-slate-200 focus:ring-2 focus:ring-blue-900'
             } placeholder:text-slate-400`}
           />
@@ -546,6 +604,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
                 onClick={() => {
                   setSearchQuery('');
                   setCurrentPage(1);
+                  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
                 }}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
                 title={language === 'hi' ? 'हटाएं' : 'Clear search'}
