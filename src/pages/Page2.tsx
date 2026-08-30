@@ -286,40 +286,31 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
     }
   };
 
-  // --- THE INDESTRUCTIBLE MODEL LOOPER ---
+  // SELF-HEALING FETCH IMPLEMENTATION
   const processAudioWithGemini = async (base64Audio: string, mimeType: string) => {
     setAiProcessing(true);
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim();
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-      // We define a fallback list of models in case the dynamic fetch fails
-      let modelsToTry = [
-        'models/gemini-2.0-flash-exp',
-        'models/gemini-1.5-flash-latest',
-        'models/gemini-1.5-flash',
-        'models/gemini-1.5-flash-8b',
-        'models/gemini-1.5-pro',
-        'models/gemini-pro'
-      ];
-
-      try {
-        // Dynamically ask Google what models your specific API key is allowed to use
-        const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-        if (modelsRes.ok) {
-          const modelsData = await modelsRes.json();
-          const validModels = modelsData.models
-            .filter((m: any) => m.supportedGenerationMethods.includes('generateContent') && m.name.includes('gemini'))
-            .map((m: any) => m.name.trim());
-          
-          if (validModels.length > 0) {
-            // Put the user's valid models at the front of the line
-            modelsToTry = [...validModels, ...modelsToTry];
-            // Remove duplicates
-            modelsToTry = Array.from(new Set(modelsToTry));
-          }
+      // 1. Ask Google what models your specific API key has access to
+      const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      if (!modelsRes.ok) throw new Error("Failed to authenticate API Key with Google");
+      
+      const modelsData = await modelsRes.json();
+      let targetModel = 'models/gemini-1.5-flash'; // Fallback
+      
+      // 2. Scan the allowed list and grab the first valid Gemini 1.5/2.0 model
+      if (modelsData && modelsData.models) {
+        const availableModels = modelsData.models;
+        const validModel = availableModels.find((m: any) => 
+          m.name.includes('gemini') && 
+          m.supportedGenerationMethods.includes('generateContent') &&
+          (m.name.includes('1.5') || m.name.includes('2.0'))
+        );
+        if (validModel) {
+          targetModel = validModel.name; 
+          console.log("Self-Healed: Using allowed model ->", targetModel);
         }
-      } catch (err) {
-        console.warn("Could not fetch dynamic models list, using fallbacks...");
       }
 
       const prompt = `
@@ -339,44 +330,36 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
         If the audio is completely silent or unrecognizable, return exactly this word: Unknown
       `;
 
-      let successData = null;
-
-      // Loop through the models until one works
-      for (const modelName of modelsToTry) {
-        console.log(`Trying AI Model: ${modelName}`);
-        
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: prompt },
-                {
-                  inlineData: {
-                    mimeType: mimeType,
-                    data: base64Audio
-                  }
+      // 3. Perform the exact audio extraction using the dynamically discovered model
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${targetModel}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: mimeType,
+                  data: base64Audio
                 }
-              ]
-            }]
-          })
-        });
+              }
+            ]
+          }]
+        })
+      });
 
-        if (response.ok) {
-          successData = await response.json();
-          console.log(`✅ Success! Model used: ${modelName}`);
-          break; // Stop looping! We found a working model.
-        } else {
-          console.warn(`❌ Model ${modelName} failed with status ${response.status}`);
-        }
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Gemini API Error Details:", errText);
+        throw new Error(`Google API returned status: ${response.status}`);
       }
 
-      if (!successData) {
-        throw new Error("Every single Gemini model failed. Your API key might be exhausted or disabled.");
-      }
-
-      const extractedKeyword = successData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'Unknown';
+      const data = await response.json();
+      
+      const extractedKeyword = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'Unknown';
       
       if (extractedKeyword !== 'Unknown' && extractedKeyword !== '') {
         setSearchQuery(extractedKeyword);
@@ -388,7 +371,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack }) => {
       
     } catch (error) {
       console.error("Gemini AI Processing failed", error);
-      alert("AI Processing Failed. Check your console logs.");
+      alert("AI Processing Failed. Check your API Key or Network.");
     } finally {
       setAiProcessing(false);
     }
