@@ -5,16 +5,18 @@ import {
   ArrowRight, 
   CheckCircle2, 
   ExternalLink,
-  FileCheck2
+  FileCheck2,
+  ArrowLeft
 } from 'lucide-react';
 import { Language, translations } from '../translations';
 
 interface Page1Props {
   language: Language;
   onHaveCard: () => void;
+  onBackToPortals?: () => void;
 }
 
-export const Page1: React.FC<Page1Props> = ({ language, onHaveCard }) => {
+export const Page1: React.FC<Page1Props> = ({ language, onHaveCard, onBackToPortals }) => {
   const t = translations[language];
   const YOUTUBE_VIDEO_URL = 'https://youtu.be/VZyj6j-Ja-4';
   const OFFICIAL_APPLY_URL = 'https://beneficiary.nha.gov.in';
@@ -28,9 +30,27 @@ export const Page1: React.FC<Page1Props> = ({ language, onHaveCard }) => {
   };
 
   return (
-    <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col justify-center">
+    <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10 flex flex-col justify-center space-y-6">
+      
+      {/* Back to Portals Button */}
+      {onBackToPortals && (
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onBackToPortals}
+            className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-blue-900 bg-white hover:bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer w-fit"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{language === 'hi' ? 'पोर्टल चयन पर वापस जाएं' : 'Back to Portal Selection'}</span>
+          </button>
+
+          <span className="text-[11px] font-bold text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+            Citizen / User Mode
+          </span>
+        </div>
+      )}
+
       {/* Official Badge & Welcome Headline */}
-      <div className="text-center space-y-3 mb-8 sm:mb-10">
+      <div className="text-center space-y-3 mb-4 sm:mb-6">
         <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-900 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-blue-200/80 shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
           <span>{t.badgeText}</span>

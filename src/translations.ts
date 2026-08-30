@@ -8,6 +8,30 @@ export const translations = {
     tollFree: 'Toll-Free:',
     languageToggle: 'हिंदी',
     
+    // Page 0: Dual Login Landing
+    p0Badge: 'Unified National Health Portal',
+    p0MainTitle: 'Welcome to',
+    p0MainTitleHighlight: 'Ayushman Acolyte',
+    p0Desc: 'Select your designated portal below to search hospitals, view surgical packages, or access the Hospital Administration Desk.',
+    
+    p0UserCardBadge: 'For Citizens & Families',
+    p0UserCardTitle: 'Beneficiary / User Portal',
+    p0UserCardSub: 'नागरिक एवं लाभार्थी लॉगिन',
+    p0UserCardDesc: 'Search 29,000+ empaneled hospitals, check cashless surgeries, read patient reviews, and apply online.',
+    p0UserPoint1: 'Find Nearest Empaneled Hospitals by GPS',
+    p0UserPoint2: 'Check 1,940+ Free Covered Surgeries',
+    p0UserPoint3: 'Read & Submit Verified Patient Reviews',
+    p0UserCta: 'Enter as Beneficiary / User',
+    
+    p0AdminCardBadge: 'For Empaneled Hospital Staff',
+    p0AdminCardTitle: 'Hospital Admin Login',
+    p0AdminCardSub: 'अस्पताल प्रशासनिक लॉगिन',
+    p0AdminCardDesc: 'Dedicated desk for hospital management, Ayushman Mitra coordinators, patient pre-auth & bed availability.',
+    p0AdminPoint1: 'Ayushman Mitra Helpdesk Coordination',
+    p0AdminPoint2: 'Pre-Authorization & Claim Status',
+    p0AdminPoint3: 'Manage Bed Inventory & Specialty Listings',
+    p0AdminCta: 'Access Hospital Admin Portal',
+    
     // Page 1
     badgeText: 'Official Beneficiary Assistance Desk',
     mainTitle: 'Ayushman',
@@ -112,6 +136,19 @@ export const translations = {
     facilityDiagnostics: 'Digital X-Ray, CT Scan & Ultrasound Labs',
     facilityCashlessDesk: 'Dedicated PM-JAY Fast-Track Admission Desk',
     
+    // Admin Login / Dashboard Placeholder
+    adminBackToHome: 'Back to Portal Selection',
+    adminTitle: 'Hospital Admin & Empanelment Portal',
+    adminSubtitle: 'National Health Authority Hospital Network (Hospital Desk)',
+    adminLoginPrompt: 'Sign in to access hospital management, Ayushman Mitra counter, and pre-auth claims.',
+    adminHospitalId: 'Hospital Empanelment Code (e.g. HOSP-CG-042)',
+    adminUsername: 'Admin ID / Staff Username',
+    adminPassword: 'Password / Security PIN',
+    adminLoginBtn: 'Login to Admin Dashboard',
+    adminDashboardTitle: 'Hospital Admin Dashboard (Preview Mode)',
+    adminDashboardDesc: 'Dashboard modules are configured and ready for implementation in the next phase.',
+    adminNotice: 'Hospital Admin Dashboard interface will be built out in the upcoming update as requested.',
+    
     // Footer
     footerTitle: 'Ayushman Acolyte | National Health Authority Public Assistance',
     footerSubtitle: 'Ayushman Bharat Pradhan Mantri Jan Arogya Yojana (AB PM-JAY)',
@@ -124,6 +161,30 @@ export const translations = {
     portalSubtitle: 'एकाेलाइट (Acolyte)',
     tollFree: 'टोल-फ्री:',
     languageToggle: 'English',
+    
+    // Page 0: Dual Login Landing
+    p0Badge: 'एकीकृत राष्ट्रीय स्वास्थ्य पोर्टल',
+    p0MainTitle: 'स्वागत है',
+    p0MainTitleHighlight: 'आयुष्मान एकाेलाइट',
+    p0Desc: 'अस्पताल खोजने, सर्जरी पैकेज देखने या अस्पताल प्रशासनिक डेस्क में प्रवेश करने के लिए अपना पोर्टल चुनें।',
+    
+    p0UserCardBadge: 'नागरिकों एवं परिवारों हेतु',
+    p0UserCardTitle: 'लाभार्थी / नागरिक पोर्टल (User Login)',
+    p0UserCardSub: 'Beneficiary & Citizen Login',
+    p0UserCardDesc: '29,000+ सूचीबद्ध अस्पताल खोजें, मुफ्त सर्जरी पैकेज देखें, मरीज समीक्षाएं पढ़ें और ऑनलाइन कार्ड बनाएं।',
+    p0UserPoint1: 'जीपीएस द्वारा निकटतम सूचीबद्ध अस्पताल खोजें',
+    p0UserPoint2: '1,940+ मुफ्त कवर की गई सर्जरी पैकेज देखें',
+    p0UserPoint3: 'सत्यापित मरीज समीक्षाएं पढ़ें और दर्ज करें',
+    p0UserCta: 'नागरिक / यूजर पोर्टल में प्रवेश करें',
+    
+    p0AdminCardBadge: 'सूचीबद्ध अस्पताल कर्मचारियों हेतु',
+    p0AdminCardTitle: 'अस्पताल एडमिन लॉगिन (Hospital Admin)',
+    p0AdminCardSub: 'Hospital Administration Login',
+    p0AdminCardDesc: 'अस्पताल प्रबंधन, आयुष्मान मित्र समन्वय, प्री-ऑथ क्लेम एवं बेड उपलब्धता हेतु समर्पित पोर्टल।',
+    p0AdminPoint1: 'आयुष्मान मित्र हेल्पडेस्क समन्वय',
+    p0AdminPoint2: 'प्री-ऑथराइजेशन एवं क्लेम ट्रैकिंग',
+    p0AdminPoint3: 'बेड उपलब्धता एवं विशेषज्ञता प्रबंधन',
+    p0AdminCta: 'अस्पताल एडमिन पोर्टल में प्रवेश करें',
     
     // Page 1
     badgeText: 'आधिकारिक लाभार्थी सहायता केंद्र',
@@ -228,6 +289,19 @@ export const translations = {
     facilityAmbulance: '24x7 एम्बुलेंस एवं आपातकालीन ट्रॉमा यूनिट',
     facilityDiagnostics: 'डिजिटल एक्स-रे, सीटी स्कैन व अल्ट्रासाउंड लैब्स',
     facilityCashlessDesk: 'समर्पित पीएम-जय फास्ट-ट्रैक एडमिशन काउंटर',
+    
+    // Admin Login / Dashboard Placeholder
+    adminBackToHome: 'पोर्टल चयन पर वापस जाएं',
+    adminTitle: 'अस्पताल एडमिन एवं सूचीबद्धता पोर्टल',
+    adminSubtitle: 'राष्ट्रीय स्वास्थ्य प्राधिकरण अस्पताल नेटवर्क',
+    adminLoginPrompt: 'अस्पताल प्रबंधन, आयुष्मान मित्र काउंटर और क्लेम देखने के लिए लॉगिन करें।',
+    adminHospitalId: 'अस्पताल कोड (उदा. HOSP-CG-042)',
+    adminUsername: 'एडमिन आईडी / यूजरनेम',
+    adminPassword: 'पासवर्ड / सुरक्षा पिन',
+    adminLoginBtn: 'एडमिन डैशबोर्ड में लॉगिन करें',
+    adminDashboardTitle: 'अस्पताल एडमिन डैशबोर्ड (प्रीव्यू मोड)',
+    adminDashboardDesc: 'डैशबोर्ड मॉड्यूल कॉन्फ़िगर कर दिए गए हैं और अगले चरण में पूरी तरह से सक्रिय होंगे।',
+    adminNotice: 'अस्पताल एडमिन डैशबोर्ड का मुख्य इंटरफेस आपके अगले निर्देश के अनुसार तैयार किया जाएगा।',
     
     // Footer
     footerTitle: 'आयुष्मान एकाेलाइट (Ayushman Acolyte) | राष्ट्रीय स्वास्थ्य सहायता',
