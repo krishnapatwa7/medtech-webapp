@@ -1,21 +1,5 @@
-﻿export interface Hospital {
-  id: string;
-  name: string;
-  nameHi: string;
-  type: 'government' | 'private';
-  address: string;
-  addressHi: string;
-  lat: number;
-  lng: number;
-  phone: string;
-  emergency: string;
-  distanceKm?: number;
-  specialties: string[];
-  specialtiesHi: string[];
-  beds: number;
-  ayushmanMitraDesk: boolean;
-  rating: number;
-}
+﻿import { Hospital } from '../types';
+export type { Hospital } from '../types';
 
 export const baseHospitals: Hospital[] = [
   {

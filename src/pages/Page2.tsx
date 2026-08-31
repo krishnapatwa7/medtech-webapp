@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Language, translations } from '../translations';
 import { detectLocation, getBrowserGPS, getCityFromCoords, UserLocation } from '../utils/location';
+import { Hospital } from '../types';
 
 interface Page2Props {
   language: Language;
@@ -25,23 +26,6 @@ const FILTER_OPTIONS: { id: FilterType; label: string; labelHi: string }[] = [
   { id: 'SUSPENDED', label: 'SUSPENDED', labelHi: 'निलंबित' },
   { id: 'BLACKLISTED', label: 'BLACKLISTED', labelHi: 'ब्लैकलिस्ट' }
 ];
-
-export interface Hospital {
-  id: string;
-  name: string;
-  nameHi: string;
-  address: string;
-  addressHi: string;
-  phone: string;
-  emergency: string;
-  beds: number;
-  specialties: string[];
-  type: string;
-  typeCode: string; 
-  lat: number;
-  lng: number;
-  distanceKm?: number; 
-}
 
 const calculateStraightDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   const R = 6371;
@@ -117,7 +101,8 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
     try {
       const pos = await getBrowserGPS();
       let lat = pos.coords.latitude, lng = pos.coords.longitude;
-      let city = await getCityFromCoords(lat, lng) || '';
+      const locationInfo = await getCityFromCoords(lat, lng);
+      let city: string = locationInfo?.city || '';
 
       if (city.toLowerCase().includes('jabalpur') || city.toLowerCase().includes('raipur') || city === '') {
         lat = 21.2120; lng = 81.3733; city = 'Bhilai';
@@ -220,9 +205,12 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
             emergency: '108',
             beds: 50,
             specialties: cleanSpecialties.length > 0 ? cleanSpecialties : ['GENERAL'],
+            specialtiesHi: cleanSpecialties.length > 0 ? cleanSpecialties : ['GENERAL'],
             type: row.Hospital_Type || filterType,
             typeCode: row.Hospital_Type_Code || (filterType === 'GOV' ? 'G' : 'P'),
-            lat: hLat, lng: hLng, distanceKm: distance
+            lat: hLat, lng: hLng, distanceKm: distance,
+            ayushmanMitraDesk: true,
+            rating: 4.5
           };
         });
 
@@ -662,9 +650,10 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
             const mapsDirUrl = `https://www.google.com/maps/dir/?api=1&destination=${hosp.lat},${hosp.lng}`;
             const globalIndex = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
             
-            const isGov = hosp.typeCode.toUpperCase() === 'G';
-            const mappedTypeLabelEng = isGov ? 'Government' : (hosp.typeCode.toUpperCase() === 'P' ? 'Private' : hosp.typeCode);
-            const mappedTypeLabelHi = isGov ? 'सरकारी' : (hosp.typeCode.toUpperCase() === 'P' ? 'निजी' : hosp.typeCode);
+            const typeCode = hosp.typeCode || '';
+            const isGov = typeCode.toUpperCase() === 'G';
+            const mappedTypeLabelEng = isGov ? 'Government' : (typeCode.toUpperCase() === 'P' ? 'Private' : typeCode);
+            const mappedTypeLabelHi = isGov ? 'सरकारी' : (typeCode.toUpperCase() === 'P' ? 'निजी' : typeCode);
             const displayMappedLabel = language === 'hi' ? mappedTypeLabelHi : mappedTypeLabelEng;
 
             return (
