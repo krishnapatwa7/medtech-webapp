@@ -1,14 +1,18 @@
-﻿export interface UserLocation {
+export interface UserLocation {
   lat: number;
   lng: number;
   city: string;
   area?: string;
+  landmark?: string;
   state?: string;
+  displayName?: string;
   source: 'gps' | 'ip' | 'manual';
 }
 
 export const POPULAR_CITIES = [
-  { name: 'Durg / Bhilai, CG', area: 'Padmanabhpur', lat: 21.1904, lng: 81.2849 },
+  { name: 'Shri Shankaracharya Technical Campus, Durg', area: 'Junwani / SSTC', lat: 21.2185, lng: 81.3090 },
+  { name: 'Padmanabhpur, Durg, CG', area: 'Padmanabhpur', lat: 21.1904, lng: 81.2849 },
+  { name: 'Bhilai / Durg, CG', area: 'Sector 6 / Civic Centre', lat: 21.2120, lng: 81.3733 },
   { name: 'Raipur, CG', area: 'Civil Lines', lat: 21.2514, lng: 81.6296 },
   { name: 'New Delhi / NCR', area: 'Connaught Place', lat: 28.6139, lng: 77.2090 },
   { name: 'Mumbai, MH', area: 'Andheri West', lat: 19.0760, lng: 72.8777 },
@@ -25,8 +29,38 @@ export const POPULAR_CITIES = [
   { name: 'Varanasi, UP', area: 'Lanka', lat: 25.3176, lng: 82.9739 },
 ];
 
-// OpenStreetMap Nominatim Detailed Reverse Geocoding
-export async function getDetailedAddressFromCoords(lat: number, lng: number): Promise<{ area: string; city: string; state: string }> {
+// OpenStreetMap Nominatim Detailed High-Precision Reverse Geocoding
+export async function getDetailedAddressFromCoords(lat: number, lng: number): Promise<{ 
+  landmark: string;
+  area: string; 
+  city: string; 
+  state: string;
+  displayName: string;
+}> {
+  // Check known college campuses / landmark bounds for high precision
+  // SSTC Junwani Campus: approx lat: 21.215 - 21.222, lng: 81.305 - 81.314
+  if (lat >= 21.214 && lat <= 21.224 && lng >= 81.304 && lng <= 81.316) {
+    return {
+      landmark: 'Shri Shankaracharya Technical Campus',
+      area: 'Junwani',
+      city: 'Durg',
+      state: 'Chhattisgarh',
+      displayName: 'Shri Shankaracharya Technical Campus, Durg'
+    };
+  }
+
+  // BIT Durg Campus: approx lat 21.192 - 21.198, lng 81.298 - 81.306
+  if (lat >= 21.191 && lat <= 21.199 && lng >= 81.297 && lng <= 81.307) {
+    return {
+      landmark: 'Bhilai Institute of Technology (BIT Durg)',
+      area: 'Malviya Nagar',
+      city: 'Durg',
+      state: 'Chhattisgarh',
+      displayName: 'Bhilai Institute of Technology, Durg'
+    };
+  }
+
+  // 1. Primary: Nominatim with zoom 18 (building & campus level detail)
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
@@ -36,7 +70,21 @@ export async function getDetailedAddressFromCoords(lat: number, lng: number): Pr
       const data = await res.json();
       const addr = data.address || {};
 
-      // Extract specific sub-locality / area (e.g., Padmanabhpur, Sector 6, Civil Lines)
+      // Extract specific Landmark / Campus / Building / Amenity name
+      const landmark = 
+        addr.amenity || 
+        addr.college || 
+        addr.university || 
+        addr.school || 
+        addr.building || 
+        addr.hospital || 
+        addr.office || 
+        addr.tourism || 
+        addr.historic || 
+        addr.leisure || 
+        (data.name && !data.name.includes(addr.road || '###') ? data.name : '');
+
+      // Extract Sub-locality / Colony / Road / Sector / Village
       const subLocality = 
         addr.suburb || 
         addr.neighbourhood || 
@@ -48,7 +96,7 @@ export async function getDetailedAddressFromCoords(lat: number, lng: number): Pr
         addr.commercial || 
         addr.road;
 
-      // Extract main city / district (e.g., Durg, Raipur, New Delhi)
+      // Extract main City / District
       const mainCity = 
         addr.city || 
         addr.town || 
@@ -59,20 +107,35 @@ export async function getDetailedAddressFromCoords(lat: number, lng: number): Pr
 
       const state = addr.state || '';
 
+      const cleanLandmark = landmark ? landmark.trim() : '';
       const cleanArea = subLocality ? subLocality.trim() : '';
       const cleanCity = mainCity ? mainCity.trim() : '';
 
+      // Construct precise display name
+      let displayName = '';
+      if (cleanLandmark && cleanCity && cleanLandmark.toLowerCase() !== cleanCity.toLowerCase()) {
+        displayName = `${cleanLandmark}, ${cleanCity}`;
+      } else if (cleanLandmark && cleanArea && cleanLandmark.toLowerCase() !== cleanArea.toLowerCase()) {
+        displayName = `${cleanLandmark}, ${cleanArea}`;
+      } else if (cleanArea && cleanCity && cleanArea.toLowerCase() !== cleanCity.toLowerCase()) {
+        displayName = `${cleanArea}, ${cleanCity}`;
+      } else {
+        displayName = cleanLandmark || cleanArea || cleanCity || 'Current Location';
+      }
+
       return {
+        landmark: cleanLandmark,
         area: cleanArea || cleanCity || 'Local Area',
         city: cleanCity || cleanArea || 'Current City',
-        state
+        state,
+        displayName
       };
     }
   } catch (e) {
     console.warn('Nominatim reverse geocode error, falling back...', e);
   }
 
-  // Backup: BigDataCloud API
+  // 2. Backup: BigDataCloud Reverse Geocoding API
   try {
     const res2 = await fetch(
       `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
@@ -82,10 +145,19 @@ export async function getDetailedAddressFromCoords(lat: number, lng: number): Pr
       const area = d.locality || d.localityInfo?.administrative?.[3]?.name || '';
       const city = d.city || d.principalSubdivision || '';
       const state = d.principalSubdivision || '';
+      const cleanArea = area.trim();
+      const cleanCity = city.trim();
+
+      const displayName = cleanArea && cleanCity && cleanArea.toLowerCase() !== cleanCity.toLowerCase()
+        ? `${cleanArea}, ${cleanCity}`
+        : cleanArea || cleanCity || 'Current Location';
+
       return {
-        area: area || city || 'Local Area',
-        city: city || area || 'Current City',
-        state
+        landmark: '',
+        area: cleanArea || cleanCity || 'Local Area',
+        city: cleanCity || cleanArea || 'Current City',
+        state,
+        displayName
       };
     }
   } catch (e2) {
@@ -93,9 +165,11 @@ export async function getDetailedAddressFromCoords(lat: number, lng: number): Pr
   }
 
   return {
+    landmark: '',
     area: 'Live Area',
     city: 'Current Location',
-    state: ''
+    state: '',
+    displayName: 'Current Location'
   };
 }
 
@@ -110,15 +184,14 @@ export function getBrowserGPS(): Promise<GeolocationPosition> {
     navigator.geolocation.getCurrentPosition(
       resolve,
       (err) => {
-        console.warn('High accuracy timed out or failed, retrying with standard accuracy:', err);
-        // Fallback retry with longer timeout and moderate accuracy
+        console.warn('High accuracy timed out, retrying with fallback settings:', err);
         navigator.geolocation.getCurrentPosition(
           resolve,
           reject,
-          { enableHighAccuracy: false, timeout: 8000, maximumAge: 30000 }
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
         );
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 }
     );
   });
 }
@@ -129,18 +202,20 @@ export async function detectLocation(): Promise<UserLocation> {
     const pos = await getBrowserGPS();
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
-    const { area, city, state } = await getDetailedAddressFromCoords(lat, lng);
+    const { landmark, area, city, state, displayName } = await getDetailedAddressFromCoords(lat, lng);
 
     return {
       lat,
       lng,
+      landmark,
       area: area || 'Padmanabhpur',
       city: city || 'Durg',
       state,
+      displayName: displayName || (city ? `${area || landmark ? `${landmark || area}, ` : ''}${city}` : 'Current Location'),
       source: 'gps'
     };
   } catch (err) {
-    console.warn('Browser GPS not available or blocked, checking IP Geolocation...', err);
+    console.warn('Browser GPS not available, checking IP Geolocation...', err);
   }
 
   // 2. IP Geolocation Fallback
@@ -151,13 +226,15 @@ export async function detectLocation(): Promise<UserLocation> {
       const lat = parseFloat(data.latitude);
       const lng = parseFloat(data.longitude);
       if (!isNaN(lat) && !isNaN(lng)) {
-        const { area, city, state } = await getDetailedAddressFromCoords(lat, lng);
+        const { landmark, area, city, state, displayName } = await getDetailedAddressFromCoords(lat, lng);
         return {
           lat,
           lng,
+          landmark,
           area: area || data.city || 'Central Area',
           city: city || data.city || data.region || 'Current City',
           state: state || data.region,
+          displayName: displayName || data.city || 'Current Location',
           source: 'ip'
         };
       }
@@ -173,6 +250,7 @@ export async function detectLocation(): Promise<UserLocation> {
     area: 'Padmanabhpur',
     city: 'Durg',
     state: 'Chhattisgarh',
+    displayName: 'Padmanabhpur, Durg',
     source: 'manual'
   };
 }

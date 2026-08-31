@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Page0 } from './pages/Page0';
@@ -15,11 +15,13 @@ export const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>('en');
   const [selectedHospital, setSelectedHospital] = useState<Hospital>(baseHospitals[0]);
   const [userLocation, setUserLocation] = useState<UserLocation>({
-    lat: 21.1904,
-    lng: 81.2849,
-    area: 'Padmanabhpur',
+    lat: 21.2185,
+    lng: 81.3090,
+    landmark: 'Shri Shankaracharya Technical Campus',
+    area: 'Junwani',
     city: 'Durg',
     state: 'Chhattisgarh',
+    displayName: 'Shri Shankaracharya Technical Campus, Durg',
     source: 'gps'
   });
 

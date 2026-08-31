@@ -100,16 +100,31 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
     setLocationLoading(true);
     try {
       const pos = await getBrowserGPS();
-      let lat = pos.coords.latitude, lng = pos.coords.longitude;
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
       const addr = await getCityFromCoords(lat, lng);
-      let city = typeof addr === 'string' ? addr : (addr.city || addr.area || '');
+      
+      const preciseName = addr.displayName || (addr.landmark ? `${addr.landmark}, ${addr.city}` : (addr.area ? `${addr.area}, ${addr.city}` : addr.city));
 
-      if (city.toLowerCase().includes('jabalpur') || city.toLowerCase().includes('raipur') || city === '') {
-        lat = 21.2120; lng = 81.3733; city = 'Bhilai';
-      }
-      setUserLocation({ lat, lng, city, source: 'gps' });
+      setUserLocation({ 
+        lat, 
+        lng, 
+        city: addr.city || 'Durg',
+        area: addr.area,
+        landmark: addr.landmark,
+        displayName: preciseName,
+        source: 'gps' 
+      });
     } catch (err) {
-      setUserLocation({ lat: 21.2120, lng: 81.3733, city: 'Bhilai', source: 'gps' });
+      console.warn("GPS tracking error, using default SSTC / Durg coords:", err);
+      setUserLocation({ 
+        lat: 21.2185, 
+        lng: 81.3090, 
+        city: 'Durg', 
+        area: 'Junwani',
+        landmark: 'Shri Shankaracharya Technical Campus',
+        displayName: 'Shri Shankaracharya Technical Campus, Durg', 
+        source: 'gps' 
+      });
     } finally {
       setLocationLoading(false);
     }
@@ -159,7 +174,13 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
   }, [citySearch]);
 
   const handleSelectCity = (city: { name: string; lat: number; lng: number }) => {
-    setUserLocation({ lat: city.lat, lng: city.lng, city: city.name, source: 'manual' });
+    setUserLocation({ 
+      lat: city.lat, 
+      lng: city.lng, 
+      city: city.name.split(',')[0], 
+      displayName: city.name,
+      source: 'manual' 
+    });
     setShowCityPicker(false);
   };
 
@@ -492,10 +513,16 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
               {locationLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <LocateFixed className="w-3.5 h-3.5" />}
               <span>{locationLoading ? t.locDetecting : (userLocation.source === 'gps' ? (language === 'hi' ? '📍 लाइव जीपीएस' : '📍 Live GPS') : (language === 'hi' ? '📍 लोकेशन ट्रैक करें' : '📍 Track Location'))}</span>
             </button>
-            <button onClick={() => setShowCityPicker(prev => !prev)} className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
+            <button 
+              onClick={() => setShowCityPicker(prev => !prev)} 
+              className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"
+              title={userLocation.displayName || userLocation.city}
+            >
               <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-              <span className="font-bold max-w-[150px] truncate">{userLocation.city || (language === 'hi' ? 'शहर चुनें' : 'Select City')}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              <span className="font-bold max-w-[200px] sm:max-w-[320px] truncate">
+                {userLocation.displayName || userLocation.city || (language === 'hi' ? 'स्थान चुनें' : 'Select Location')}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             </button>
           </div>
           
@@ -533,7 +560,7 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{language === 'hi' ? 'पीएम-जय अस्पताल डेटाबेस' : 'PM-JAY Hospital Database'}</h2>
           <p className="text-sm text-slate-600 mt-1 max-w-2xl">
-            {language === 'hi' ? 'दूरी के अनुसार सबसे करीब:' : 'Showing sorted results closest to'} <span className="font-semibold text-slate-900">{userLocation.city}</span>
+            {language === 'hi' ? 'दूरी के अनुसार सबसे करीब:' : 'Showing sorted results closest to'} <span className="font-semibold text-slate-900">{userLocation.displayName || userLocation.city}</span>
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm bg-white border border-slate-200/90 px-4 py-2.5 rounded-xl text-slate-700 shadow-xs">
@@ -674,12 +701,25 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
                       </span>
                     </div>
 
-                    <a href={mapsSearchUrl} target="_blank" rel="noopener noreferrer" className="group/name inline-flex items-center gap-1.5 text-base sm:text-xl font-extrabold text-slate-900 hover:text-blue-900 transition-colors cursor-pointer mt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const enrichedHospital: Hospital = {
+                          ...hosp,
+                          specialties: hosp.specialties.map(code => specialtyMap[code] || code)
+                        };
+                        onSelectHospital(enrichedHospital, userLocation);
+                      }}
+                      className="group/name inline-flex flex-wrap items-center gap-2 text-base sm:text-xl font-extrabold text-slate-900 hover:text-blue-900 transition-all cursor-pointer mt-1 text-left"
+                    >
                       <span className="group-hover/name:underline decoration-blue-900 decoration-2 underline-offset-2">
                         {language === 'hi' ? hosp.nameHi : hosp.name}
                       </span>
-                      <ExternalLink className="w-4 h-4 text-slate-400 group-hover/name:text-blue-900 shrink-0" />
-                    </a>
+                      <span className="text-[11px] font-bold text-blue-900 bg-blue-50 group-hover/name:bg-blue-900 group-hover/name:text-white px-2.5 py-0.5 rounded-lg border border-blue-200/80 transition-all flex items-center gap-1 shrink-0">
+                        <span>{language === 'hi' ? 'प्रोफ़ाइल व समीक्षाएं देखें' : 'View Profile & Reviews'}</span>
+                        <ChevronRight className="w-3.5 h-3.5 group-hover/name:translate-x-0.5 transition-transform" />
+                      </span>
+                    </button>
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1.5">
                       <div className="flex items-center gap-1.5">
@@ -716,11 +756,28 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
 
                 <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <a href={`tel:${hosp.phone}`} className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl shadow-2xs transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const enrichedHospital: Hospital = {
+                          ...hosp,
+                          specialties: hosp.specialties.map(code => specialtyMap[code] || code)
+                        };
+                        onSelectHospital(enrichedHospital, userLocation);
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-900 hover:text-white bg-blue-50 hover:bg-blue-900 border border-blue-200 px-3.5 py-2 rounded-xl shadow-2xs transition-all cursor-pointer"
+                    >
+                      <Building2 className="w-3.5 h-3.5" />
+                      <span>{language === 'hi' ? 'अस्पताल विवरण एवं समीक्षाएं' : 'Hospital Details & Reviews'}</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+
+                    <a href={`tel:${hosp.phone}`} className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl shadow-2xs transition-colors">
                       <Phone className="w-3.5 h-3.5 text-blue-900" />
                       <span>{language === 'hi' ? 'कॉल करें:' : 'Call:'} {hosp.phone}</span>
                     </a>
                   </div>
+
                   <a href={mapsDirUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-blue-900 hover:bg-blue-950 px-4 py-2 rounded-xl shadow-xs transition-colors cursor-pointer">
                     <Navigation className="w-3.5 h-3.5 text-sky-300" />
                     <span>{language === 'hi' ? 'रास्ता देखें' : 'Get Directions'}</span>
