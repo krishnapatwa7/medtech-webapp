@@ -6,9 +6,8 @@ import {
   CheckCircle2, 
   ShieldCheck, 
   Sparkles,
-  Lock,
   HeartHandshake,
-  UserCheck,
+  Search,
   Stethoscope,
   Activity
 } from 'lucide-react';
@@ -30,7 +29,7 @@ export const Page0: React.FC<Page0Props> = ({
   return (
     <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col justify-center">
       
-      {/* Official Government Portal Headline */}
+      {/* Directory Headline */}
       <div className="text-center space-y-3 mb-8 sm:mb-12">
         <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-900 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-blue-200/80 shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
@@ -46,10 +45,10 @@ export const Page0: React.FC<Page0Props> = ({
         </p>
       </div>
 
-      {/* Dual Portal Selection Cards (User Login vs Hospital Admin Login) */}
+      {/* Dual Entry Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
         
-        {/* PORTAL 1: USER LOGIN / BENEFICIARY PORTAL */}
+        {/* CARD 1: PATIENTS & CITIZENS */}
         <button
           onClick={onSelectUserLogin}
           className="group relative text-left bg-white rounded-3xl p-6 sm:p-8 border-2 border-blue-900/20 hover:border-blue-900 shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col justify-between overflow-hidden cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-100"
@@ -58,7 +57,7 @@ export const Page0: React.FC<Page0Props> = ({
           
           <div className="relative z-10 space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-blue-900 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-              <Users className="w-7 h-7" />
+              <Search className="w-7 h-7" />
             </div>
 
             <div>
@@ -100,7 +99,7 @@ export const Page0: React.FC<Page0Props> = ({
           </div>
         </button>
 
-        {/* PORTAL 2: HOSPITAL ADMIN LOGIN */}
+        {/* CARD 2: HOSPITAL FACILITY DESK */}
         <button
           onClick={onSelectAdminLogin}
           className="group relative text-left bg-white rounded-3xl p-6 sm:p-8 border-2 border-slate-300 hover:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col justify-between overflow-hidden cursor-pointer focus:outline-none focus:ring-4 focus:ring-slate-200"
@@ -144,10 +143,7 @@ export const Page0: React.FC<Page0Props> = ({
           </div>
 
           <div className="relative z-10 mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-sm font-bold text-slate-800 group-hover:text-slate-950">
-            <span className="flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5" />
-              {t.p0AdminCta}
-            </span>
+            <span>{t.p0AdminCta}</span>
             <div className="w-9 h-9 rounded-full bg-slate-100 group-hover:bg-slate-900 group-hover:text-white flex items-center justify-center transition-colors">
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </div>
@@ -156,7 +152,7 @@ export const Page0: React.FC<Page0Props> = ({
 
       </div>
 
-      {/* Trust & Key Metrics Bar */}
+      {/* Metrics Bar */}
       <div className="mt-12 pt-8 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
         <div className="p-4 rounded-2xl bg-white border border-slate-200/70 shadow-2xs">
           <div className="text-xl sm:text-2xl font-black text-blue-900">{t.metric1Val}</div>
