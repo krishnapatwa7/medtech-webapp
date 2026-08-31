@@ -3,17 +3,15 @@ import {
   ArrowLeft, 
   Building2, 
   ShieldCheck, 
-  Lock, 
-  KeyRound, 
   UserCheck, 
-  CheckCircle2, 
-  Clock, 
   Activity, 
   BedDouble, 
-  FileText, 
   LogOut,
   Sparkles,
-  AlertCircle
+  ArrowRight,
+  Stethoscope,
+  FileCheck2,
+  Lock
 } from 'lucide-react';
 import { Language, translations } from '../translations';
 
@@ -26,19 +24,43 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
   const t = translations[language];
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [hospitalCode, setHospitalCode] = useState<string>('HOSP-CG-042');
-  const [username, setUsername] = useState<string>('admin_durg_civil');
-  const [password, setPassword] = useState<string>('••••••••');
+  const [selectedRole, setSelectedRole] = useState<string>('mitra');
+  const [hospitalName, setHospitalName] = useState<string>('District Civil Hospital Durg (HOSP-CG-042)');
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoggedIn(true);
-  };
+  const roles = [
+    {
+      id: 'mitra',
+      title: 'Ayushman Mitra Helpdesk',
+      titleHi: 'आयुष्मान मित्र हेल्पडेस्क',
+      desc: 'Patient admission verification, card scan & instant pre-authorization support',
+      descHi: 'मरीज प्रवेश सत्यापन, कार्ड स्कैन एवं त्वरित पूर्व-अनुमोदन सहायता',
+      icon: UserCheck,
+      color: 'blue'
+    },
+    {
+      id: 'preauth',
+      title: 'Pre-Authorization & Claims Desk',
+      titleHi: 'प्री-ऑथराइजेशन एवं क्लेम डेस्क',
+      desc: 'Surgical package booking, medical documentation & cashless clearance',
+      descHi: 'सर्जरी पैकेज बुकिंग, मेडिकल दस्तावेज एवं कैशलेस क्लीयरेंस',
+      icon: FileCheck2,
+      color: 'emerald'
+    },
+    {
+      id: 'bed',
+      title: 'Hospital Bed & Specialty Manager',
+      titleHi: 'बेड उपलब्धता एवं विशेषज्ञता प्रबंधन',
+      desc: 'Live ICU/General bed tracker & doctor on-duty availability roster',
+      descHi: 'लाइव आईसीयू / जनरल बेड ट्रैकर एवं ऑन-ड्यूटी डॉक्टर सूची',
+      icon: BedDouble,
+      color: 'purple'
+    }
+  ];
 
   return (
     <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-6">
       
-      {/* Back Button */}
+      {/* Top Back Navigation Bar */}
       <div className="flex items-center justify-between gap-4">
         <button
           onClick={onBack}
@@ -49,87 +71,99 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
         </button>
 
         <div className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-          <Lock className="w-3.5 h-3.5 text-slate-600" />
-          <span>Secure Hospital Administration Desk</span>
+          <ShieldCheck className="w-3.5 h-3.5 text-blue-900" />
+          <span>Hospital Administration & Mitra Portal</span>
         </div>
       </div>
 
       {!isLoggedIn ? (
-        /* Hospital Staff Login Form */
-        <div className="max-w-md mx-auto bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        /* Role & Hospital Selection Gateway (No raw password inputs to ensure 100% clean browser trust) */
+        <div className="max-w-xl mx-auto bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
           
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center mx-auto shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-blue-900 text-white flex items-center justify-center mx-auto shadow-md">
               <Building2 className="w-7 h-7" />
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900">
               {t.adminTitle}
             </h2>
-            <p className="text-xs text-slate-500 max-w-xs mx-auto">
-              {t.adminLoginPrompt}
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Select your staff role and hospital empanelment unit to access the administration dashboard.
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4 text-xs">
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">
-                {t.adminHospitalId}
-              </label>
-              <input
-                type="text"
-                required
-                value={hospitalCode}
-                onChange={(e) => setHospitalCode(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 font-mono focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
+          <div className="space-y-3 pt-2">
+            <label className="block text-xs font-bold text-slate-700">
+              Select Operating Desk / Role:
+            </label>
 
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">
-                {t.adminUsername}
-              </label>
-              <input
-                type="text"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
+            <div className="space-y-2.5">
+              {roles.map((r) => {
+                const IconComponent = r.icon;
+                const isSelected = selectedRole === r.id;
 
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">
-                {t.adminPassword}
-              </label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
+                return (
+                  <button
+                    type="button"
+                    key={r.id}
+                    onClick={() => setSelectedRole(r.id)}
+                    className={`w-full text-left p-3.5 rounded-2xl border-2 transition-all flex items-start gap-3.5 cursor-pointer ${
+                      isSelected
+                        ? 'border-blue-900 bg-blue-50/50 shadow-xs'
+                        : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
+                    }`}
+                  >
+                    <div className={`p-2.5 rounded-xl text-white shrink-0 ${isSelected ? 'bg-blue-900' : 'bg-slate-700'}`}>
+                      <IconComponent className="w-5 h-5" />
+                    </div>
 
-            <div className="pt-2">
-              <button
-                type="submit"
-                className="w-full bg-slate-900 hover:bg-slate-950 text-white font-bold py-3 rounded-xl shadow-xs transition-colors cursor-pointer text-xs sm:text-sm flex items-center justify-center gap-2"
-              >
-                <KeyRound className="w-4 h-4" />
-                <span>{t.adminLoginBtn}</span>
-              </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                          {language === 'hi' ? r.titleHi : r.title}
+                        </h4>
+                        {isSelected && (
+                          <span className="w-2 h-2 rounded-full bg-blue-900"></span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                        {language === 'hi' ? r.descHi : r.desc}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          </form>
+          </div>
 
-          <div className="text-center pt-2 border-t border-slate-100">
-            <p className="text-[11px] text-slate-400">
-              Need technical help? Contact National Health Authority Desk: <strong>14555</strong>
-            </p>
+          <div className="space-y-2 pt-2">
+            <label className="block text-xs font-bold text-slate-700">
+              Hospital Unit:
+            </label>
+            <select
+              value={hospitalName}
+              onChange={(e) => setHospitalName(e.target.value)}
+              className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-900"
+            >
+              <option value="District Civil Hospital Durg (HOSP-CG-042)">District Civil Hospital Durg (HOSP-CG-042)</option>
+              <option value="Chandulal Chandrakar Memorial Hospital (HOSP-CG-108)">Chandulal Chandrakar Memorial Hospital (HOSP-CG-108)</option>
+              <option value="AIIMS Raipur Referral Desk (AIIMS-RPR-01)">AIIMS Raipur Referral Desk (AIIMS-RPR-01)</option>
+            </select>
+          </div>
+
+          <div className="pt-3">
+            <button
+              onClick={() => setIsLoggedIn(true)}
+              className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-3 rounded-xl shadow-xs transition-colors cursor-pointer text-xs sm:text-sm flex items-center justify-center gap-2"
+            >
+              <span>Launch Hospital Admin Dashboard</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
 
         </div>
       ) : (
-        /* Hospital Admin Dashboard Placeholder (To be expanded in future steps) */
+        /* Hospital Admin Dashboard Preview Screen */
         <div className="space-y-6">
           
           {/* Header Dashboard Banner */}
@@ -137,13 +171,13 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
             <div>
               <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full mb-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Hospital Desk Active: {hospitalCode}</span>
+                <span>Active Empaneled Facility Desk</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black">
-                {t.adminDashboardTitle}
+                {hospitalName}
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 mt-1">
-                District Civil Hospital & PM-JAY Empaneled Referral Center ({username})
+                Active Module: <strong>{roles.find(r => r.id === selectedRole)?.title}</strong>
               </p>
             </div>
 
@@ -152,7 +186,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
               className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Logout</span>
+              <span>Switch Desk</span>
             </button>
           </div>
 
@@ -163,7 +197,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
             </div>
             <div>
               <h4 className="text-xs sm:text-sm font-extrabold text-amber-950">
-                Hospital Admin Dashboard Ready for Upcoming Expansion
+                Hospital Admin Dashboard Ready for Upcoming Modules
               </h4>
               <p className="text-xs text-amber-900 mt-0.5 leading-relaxed">
                 {t.adminNotice} All Citizen features remain fully active inside the <strong>User Login</strong> portal.
@@ -171,7 +205,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
             </div>
           </div>
 
-          {/* 4 Preview Module Cards */}
+          {/* 4 Preview Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
