@@ -1,0 +1,75 @@
+specialityid,specialitycode,specialityname,status,displayorder
+10083,PM,Palliative Medicine,Active,28
+100001,BM,Burns Management,Active,1
+100002,MC,Cardiology,Active,2
+100003,SV,Cardio-thoracic & Vascular surgery,Active,3
+100004,ER,Emergency Room Packages (Care requiring less than 12 hrs stay),Active,23
+100005,MG,General Medicine,Active,5
+100006,SG,General Surgery,Active,6
+100007,IN,Interventional Neuroradiology,Active,7
+100008,MO,Medical Oncology,Active,8
+100009,MM,Mental Disorders Packages,Active,9
+100010,MN,Neo-natal care Packages,Active,10
+100011,SN,Neurosurgery,Active,11
+100012,SO,Obstetrics & Gynaecology,Active,12
+100013,SE,Opthalmology,Active,13
+100014,SM,Oral & Maxillofacial Surgery,Active,14
+100015,SB,Orthopaedics,Active,15
+100016,SL,Otorhinolaryngology,Active,16
+100017,MP,Paediatric Medical management,Active,17
+100018,SS,Paediatric Surgery,Active,18
+100019,SP,Plastic and Reconstructive Surgery,Active,19
+100020,ST,Polytrauma,Active,20
+100021,MR,Radiation Oncology,Active,21
+100022,SC,Surgical Oncology,Active,22
+100023,SU,Urology,Active,23
+100024,US,Unspecified Surgical Package,Active,29
+100026,ID,Infectious Diseases,Active,24
+100027,NA,Paediatric Cancer,Active,27
+100028,OT,Organ & Tissue Transplant,Active,25
+100043,IMP,Implants,Active,39
+100114,AS,Ambulance Services,Active,1
+100194,YG,Yoga,Active,40
+100213,ERRT,Emergency Room Packages,Active,2
+100214,CN,Consultation,Active,31
+100215,LB,Laboratory Medicine,Active,27
+100216,RI,Radiology,Active,40
+100217,PP,Pulmonology,Active,12
+100218,NM,Nuclear Medicine,Active,34
+100219,BY,Biopsies,Active,38
+100220,RP,Interventional Radiology,Active,7
+100221,CA,Oncology Investigations,Active,34
+100222,CT,Chemotherapy,Active,8
+100223,RT,Radiotherapy,Active,21
+100224,IT,Radio-Isotope Therapy,Active,28
+100225,PT,Physiotherapy,Active,26
+100226,BT,Behavioural therapy,Active,9
+100227,DI,Dentistry,Active,37
+100228,OP,Ophthalmology,Active,8
+100229,ENT,ENT,Active,16
+100230,CC,Critical Care,Active,17
+100231,BC,Blood Component Charges,Active,31
+100232,GP,General Procedure,Active,10
+100233,HN,Head and Neck Surgery,Active,11
+100234,SKN,Skin,Active,15
+100235,CD,Cardiology,Active,9
+100236,CV,Cardiovascular And Cardiac Surgery,Active,2
+100237,GS,General Surgery,Active,3
+100238,GM,Medical Gastroenterology,Active,42
+100239,AG,Abdomen/GI Surgery,Active,40
+100240,PS,Paediatric Surgery,Active,22
+100241,OG,Obstetrics And Gynaecology,Active,14
+100242,NU,Nephrology And Urology,Active,35
+100243,NI,Neurology,Active,13
+100244,NS,Neuro-Surgery,Active,11
+100245,OR,Orthopaedics,Active,15
+100246,BP,Burns And Plastic Surgery,Active,1
+100247,HC,Annual Health Check-up,Active,32
+100248,WC,Ward charges,Active,29
+100249,TMH,Surgical Oncology ,Active,22
+100250,AY,Ayurveda,Active,41
+100251,NP,Naturopathy,Active,42
+100252,YGN,Yoga and Naturopathy,Active,2
+100253,UN,Unani,Active,3
+100254,SID,Siddha,Active,4
+100256,AY,Ayurveda,Active,1
