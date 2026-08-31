@@ -2,7 +2,7 @@
   lat: number;
   lng: number;
   city: string;
-  area: string;
+  area?: string;
   state?: string;
   source: 'gps' | 'ip' | 'manual';
 }
@@ -175,4 +175,9 @@ export async function detectLocation(): Promise<UserLocation> {
     state: 'Chhattisgarh',
     source: 'manual'
   };
+}
+
+export async function getCityFromCoords(lat: number, lng: number) {
+  const result = await getDetailedAddressFromCoords(lat, lng);
+  return result;
 }

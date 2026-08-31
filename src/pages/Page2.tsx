@@ -89,7 +89,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
     lat: 21.2120, lng: 81.3733, city: 'Bhilai', source: 'manual'
   });
   
-  const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [locationLoading, setLocationLoading] = useState<boolean>(true);
   const [showCityPicker, setShowCityPicker] = useState<boolean>(false);
   const [citySearch, setCitySearch] = useState<string>('');
@@ -100,8 +99,19 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
   const [csvLoading, setCsvLoading] = useState<boolean>(true);
   const [filterType, setFilterType] = useState<FilterType>('GOV');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const ITEMS_PER_PAGE = 20;
+
+  // AI, Audio & TTS States
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [aiProcessing, setAiProcessing] = useState<boolean>(false);
+  const [isEmergency, setIsEmergency] = useState<boolean>(false);
+  const [pendingTts, setPendingTts] = useState<{ keyword: string } | null>(null);
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
   const triggerGpsLocation = async () => {
     setLocationLoading(true);
     try {
@@ -166,7 +176,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
   const handleSelectCity = (city: { name: string; lat: number; lng: number }) => {
     setUserLocation({ lat: city.lat, lng: city.lng, city: city.name, source: 'manual' });
     setShowCityPicker(false);
-    await loadHospitalsForCoords(city.lat, city.lng);
   };
 
   useEffect(() => {
@@ -448,10 +457,6 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
       setAiProcessing(false);
     }
   };
-
-  const displayLocationString = userLocation.area && userLocation.city && userLocation.area.toLowerCase() !== userLocation.city.toLowerCase()
-    ? `${userLocation.area}, ${userLocation.city}`
-    : (userLocation.city || userLocation.area || 'Current Location');
 
   return (
     <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 relative">
