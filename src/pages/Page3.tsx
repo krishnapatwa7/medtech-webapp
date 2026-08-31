@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -250,7 +250,7 @@ export const Page3: React.FC<Page3Props> = ({ hospital, userLocation, language, 
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-          {(language === 'hi' ? hospital.specialtiesHi : hospital.specialties).map((spec, idx) => (
+          {(language === 'hi' ? (hospital.specialtiesHi || hospital.specialties) : hospital.specialties).map((spec, idx) => (
             <div 
               key={idx}
               className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center justify-between gap-2"

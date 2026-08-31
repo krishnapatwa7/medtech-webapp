@@ -1,4 +1,4 @@
-﻿import { Hospital, baseHospitals } from '../data/hospitals';
+import { Hospital, baseHospitals } from '../data/hospitals';
 
 // Haversine formula to compute great-circle distance in kilometers
 export function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -91,7 +91,7 @@ export function getNearbyHospitals(
     } else {
       // General city localization for other hospitals
       localizedAddress = `${hosp.address.split(',')[0]}, ${cityName}`;
-      localizedAddressHi = `${hosp.addressHi.split(',')[0]}, ${cityName}`;
+      localizedAddressHi = `${(hosp.addressHi || hosp.address).split(',')[0]}, ${cityName}`;
     }
 
     return {

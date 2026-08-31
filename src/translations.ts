@@ -2,14 +2,14 @@
 
 export const translations = {
   en: {
-    portalBadge: 'PM-JAY Digital Assistant',
+    portalBadge: 'Healthcare Assistance Portal',
     portalTitle: 'Ayushman',
     portalSubtitle: 'Acolyte',
-    tollFree: 'Toll-Free:',
+    tollFree: 'Helpline:',
     languageToggle: 'हिंदी',
     
     // Page 0: Dual Login Landing
-    p0Badge: 'Unified National Health Portal',
+    p0Badge: 'Ayushman Bharat Healthcare Companion',
     p0MainTitle: 'Welcome to',
     p0MainTitleHighlight: 'Ayushman Acolyte',
     p0Desc: 'Select your designated portal below to search hospitals, view surgical packages, or access the Hospital Administration Desk.',
@@ -33,7 +33,7 @@ export const translations = {
     p0AdminCta: 'Access Hospital Admin Portal',
     
     // Page 1
-    badgeText: 'Official Beneficiary Assistance Desk',
+    badgeText: 'Citizen Healthcare Facilitation Desk',
     mainTitle: 'Ayushman',
     mainTitleHighlight: 'Acolyte Portal',
     mainDesc: 'Your trusted healthcare companion to find empaneled hospitals, check covered surgeries, or apply online via the official PM-JAY portal.',
@@ -48,16 +48,16 @@ export const translations = {
     card1Cta: 'Proceed to Step 2',
     
     // Card 2
-    card2Badge: 'Official Portal (NHA)',
+    card2Badge: 'Official NHA Portal (External)',
     card2Title: 'Apply for Ayushman Card',
     card2Sub: 'आयुष्मान कार्ड ऑनलाइन बनाएं',
-    card2Desc: 'Directly apply, complete Aadhaar e-KYC, check family eligibility, and download card on the official government portal.',
+    card2Desc: 'Directly apply, complete Aadhaar e-KYC, check family eligibility, and download card on the official government website (beneficiary.nha.gov.in).',
     card2Point1: 'Instant eKYC & Card Download',
-    card2Point2: 'Official NHA Beneficiary Link',
-    card2Cta: 'Apply on beneficiary.nha.gov.in',
+    card2Point2: 'Direct Link to beneficiary.nha.gov.in',
+    card2Cta: 'Open beneficiary.nha.gov.in',
     
     // Card 3
-    card3Badge: 'Video Guide',
+    card3Badge: 'Video Tutorial',
     card3Title: "I don't have Ayushman Card",
     card3Sub: 'वीडियो ट्यूटोरियल देखें',
     card3Desc: 'Watch a quick step-by-step video guide explaining eligibility, documents needed, and how to apply easily.',
@@ -111,7 +111,7 @@ export const translations = {
     
     // Page 3: Hospital Profile & Reviews
     backToHospitals: 'Back to Hospital List',
-    p3Badge: 'Official Empaneled Facility Profile',
+    p3Badge: 'PM-JAY Empaneled Facility Profile',
     overallRating: 'Overall Beneficiary Rating',
     basedOn: 'based on verified patient reviews',
     cashlessCovered: '100% Cashless under PM-JAY',
@@ -139,7 +139,7 @@ export const translations = {
     // Admin Login / Dashboard Placeholder
     adminBackToHome: 'Back to Portal Selection',
     adminTitle: 'Hospital Admin & Empanelment Portal',
-    adminSubtitle: 'National Health Authority Hospital Network (Hospital Desk)',
+    adminSubtitle: 'Hospital Administration & Ayushman Mitra Desk',
     adminLoginPrompt: 'Sign in to access hospital management, Ayushman Mitra counter, and pre-auth claims.',
     adminHospitalId: 'Hospital Empanelment Code (e.g. HOSP-CG-042)',
     adminUsername: 'Admin ID / Staff Username',
@@ -150,20 +150,21 @@ export const translations = {
     adminNotice: 'Hospital Admin Dashboard interface will be built out in the upcoming update as requested.',
     
     // Footer
-    footerTitle: 'Ayushman Acolyte | National Health Authority Public Assistance',
-    footerSubtitle: 'Ayushman Bharat Pradhan Mantri Jan Arogya Yojana (AB PM-JAY)',
-    footerCopyright: '© 2026 Ayushman Acolyte. All information aligned with official AB-PMJAY guidelines.',
-    footerHelpline: 'Toll-Free 24x7 Helpline:'
+    footerTitle: 'Ayushman Acolyte | Healthcare Assistance & Hospital Locator',
+    footerSubtitle: 'A Public Initiative to Facilitate PM-JAY Beneficiaries',
+    footerDisclaimer: 'Disclaimer: Ayushman Acolyte is an independent public facilitation platform designed to help citizens locate PM-JAY empaneled hospitals. For official government registration & downloads, visit beneficiary.nha.gov.in.',
+    footerCopyright: '© 2026 Ayushman Acolyte. All scheme information aligned with public AB-PMJAY guidelines.',
+    footerHelpline: 'Toll-Free 24x7 National Helpline:'
   },
   hi: {
-    portalBadge: 'पीएम-जय डिजिटल सहायक',
+    portalBadge: 'स्वास्थ्य सहायता पोर्टल',
     portalTitle: 'आयुष्मान',
     portalSubtitle: 'एकाेलाइट (Acolyte)',
-    tollFree: 'टोल-फ्री:',
+    tollFree: 'हेल्पलाइन:',
     languageToggle: 'English',
     
     // Page 0: Dual Login Landing
-    p0Badge: 'एकीकृत राष्ट्रीय स्वास्थ्य पोर्टल',
+    p0Badge: 'आयुष्मान भारत स्वास्थ्य सहायक',
     p0MainTitle: 'स्वागत है',
     p0MainTitleHighlight: 'आयुष्मान एकाेलाइट',
     p0Desc: 'अस्पताल खोजने, सर्जरी पैकेज देखने या अस्पताल प्रशासनिक डेस्क में प्रवेश करने के लिए अपना पोर्टल चुनें।',
@@ -187,7 +188,7 @@ export const translations = {
     p0AdminCta: 'अस्पताल एडमिन पोर्टल में प्रवेश करें',
     
     // Page 1
-    badgeText: 'आधिकारिक लाभार्थी सहायता केंद्र',
+    badgeText: 'नागरिक स्वास्थ्य सहायता केंद्र',
     mainTitle: 'आयुष्मान',
     mainTitleHighlight: 'एकाेलाइट पोर्टल',
     mainDesc: 'सूचीबद्ध अस्पताल और सर्जरी खोजने, आधिकारिक सरकारी पोर्टल से ऑनलाइन आवेदन करने, या वीडियो गाइड देखने के लिए विकल्प चुनें।',
@@ -202,16 +203,16 @@ export const translations = {
     card1Cta: 'चरण 2 पर आगे बढ़ें',
     
     // Card 2
-    card2Badge: 'आधिकारिक पोर्टल (NHA)',
+    card2Badge: 'आधिकारिक NHA पोर्टल (बाहरी लिंक)',
     card2Title: 'आयुष्मान कार्ड के लिए आवेदन करें',
     card2Sub: 'Apply for Ayushman Card',
-    card2Desc: 'आधिकारिक सरकारी पोर्टल पर सीधे आवेदन करें, आधार ई-केवाईसी पूरी करें, पात्रता जांचें और कार्ड डाउनलोड करें।',
+    card2Desc: 'आधिकारिक सरकारी पोर्टल (beneficiary.nha.gov.in) पर सीधे आवेदन करें, आधार ई-केवाईसी पूरी करें, पात्रता जांचें और कार्ड डाउनलोड करें।',
     card2Point1: 'त्वरित ई-केवाईसी और कार्ड डाउनलोड',
-    card2Point2: 'आधिकारिक NHA लाभार्थी लिंक',
-    card2Cta: 'beneficiary.nha.gov.in पर जाएं',
+    card2Point2: 'beneficiary.nha.gov.in पर सीधा लिंक',
+    card2Cta: 'beneficiary.nha.gov.in खोलें',
     
     // Card 3
-    card3Badge: 'वीडियो मार्गदर्शिका',
+    card3Badge: 'वीडियो ट्यूटोरियल',
     card3Title: 'मेरे पास आयुष्मान कार्ड नहीं है',
     card3Sub: "I don't have Ayushman Card",
     card3Desc: 'पात्रता, आवश्यक दस्तावेज और आसानी से आवेदन करने का तरीका जानने के लिए सरल वीडियो ट्यूटोरियल देखें।',
@@ -265,7 +266,7 @@ export const translations = {
     
     // Page 3: Hospital Profile & Reviews
     backToHospitals: 'अस्पतालों की सूची पर वापस जाएं',
-    p3Badge: 'आधिकारिक सूचीबद्ध अस्पताल प्रोफाइल',
+    p3Badge: 'पीएम-जय सूचीबद्ध अस्पताल प्रोफाइल',
     overallRating: 'समग्र लाभार्थी रेटिंग',
     basedOn: 'सत्यापित मरीज समीक्षाओं के आधार पर',
     cashlessCovered: 'पीएम-जय के तहत 100% कैशलेस कवर',
@@ -293,7 +294,7 @@ export const translations = {
     // Admin Login / Dashboard Placeholder
     adminBackToHome: 'पोर्टल चयन पर वापस जाएं',
     adminTitle: 'अस्पताल एडमिन एवं सूचीबद्धता पोर्टल',
-    adminSubtitle: 'राष्ट्रीय स्वास्थ्य प्राधिकरण अस्पताल नेटवर्क',
+    adminSubtitle: 'अस्पताल प्रशासन एवं आयुष्मान मित्र डेस्क',
     adminLoginPrompt: 'अस्पताल प्रबंधन, आयुष्मान मित्र काउंटर और क्लेम देखने के लिए लॉगिन करें।',
     adminHospitalId: 'अस्पताल कोड (उदा. HOSP-CG-042)',
     adminUsername: 'एडमिन आईडी / यूजरनेम',
@@ -304,9 +305,10 @@ export const translations = {
     adminNotice: 'अस्पताल एडमिन डैशबोर्ड का मुख्य इंटरफेस आपके अगले निर्देश के अनुसार तैयार किया जाएगा।',
     
     // Footer
-    footerTitle: 'आयुष्मान एकाेलाइट (Ayushman Acolyte) | राष्ट्रीय स्वास्थ्य सहायता',
-    footerSubtitle: 'आयुष्मान भारत प्रधानमंत्री जन आरोग्य योजना (AB PM-JAY)',
-    footerCopyright: '© 2026 आयुष्मान एकाेलाइट। सभी जानकारी आधिकारिक दिशानिर्देशों के अनुरूप।',
-    footerHelpline: 'टोल-फ्री 24x7 हेल्पलाइन:'
+    footerTitle: 'आयुष्मान एकाेलाइट (Ayushman Acolyte) | स्वास्थ्य सहायता एवं अस्पताल खोज',
+    footerSubtitle: 'पीएम-जय लाभार्थियों की सुविधा हेतु नागरिक पहल',
+    footerDisclaimer: 'अस्वीकरण: आयुष्मान एकाेलाइट एक स्वतंत्र जन-सुविधा मंच है जो नागरिकों को नजदीकी सूचीबद्ध अस्पताल खोजने में सहायता करता है। आधिकारिक सरकारी सेवाओं के लिए beneficiary.nha.gov.in पर जाएं।',
+    footerCopyright: '© 2026 आयुष्मान एकाेलाइट। सभी जानकारी सार्वजनिक एबी-पीएमजय दिशानिर्देशों के अनुरूप।',
+    footerHelpline: 'टोल-फ्री 24x7 राष्ट्रीय हेल्पलाइन:'
   }
 };
