@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+structure.txt
+presentation.html
+SIH_Pitch_Deck.md
 
 # Editor directories and files
 .vscode/*

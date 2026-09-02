@@ -1,20 +1,25 @@
 ﻿import React from 'react';
 import { 
-  CreditCard, 
+  Building2, 
   PlayCircle, 
   ArrowRight, 
   CheckCircle2, 
   ExternalLink,
-  FileCheck2
+  BookOpen,
+  ArrowLeft,
+  Search,
+  HelpCircle,
+  Stethoscope
 } from 'lucide-react';
 import { Language, translations } from '../translations';
 
 interface Page1Props {
   language: Language;
   onHaveCard: () => void;
+  onBackToPortals?: () => void;
 }
 
-export const Page1: React.FC<Page1Props> = ({ language, onHaveCard }) => {
+export const Page1: React.FC<Page1Props> = ({ language, onHaveCard, onBackToPortals }) => {
   const t = translations[language];
   const YOUTUBE_VIDEO_URL = 'https://youtu.be/VZyj6j-Ja-4';
   const OFFICIAL_APPLY_URL = 'https://beneficiary.nha.gov.in';
@@ -28,9 +33,27 @@ export const Page1: React.FC<Page1Props> = ({ language, onHaveCard }) => {
   };
 
   return (
-    <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col justify-center">
-      {/* Official Badge & Welcome Headline */}
-      <div className="text-center space-y-3 mb-8 sm:mb-10">
+    <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10 flex flex-col justify-center space-y-6">
+      
+      {/* Back to Selection Button */}
+      {onBackToPortals && (
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onBackToPortals}
+            className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-blue-900 bg-white hover:bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer w-fit"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{language === 'hi' ? 'मुख्य मेन्यू पर वापस जाएं' : 'Back to Main Menu'}</span>
+          </button>
+
+          <span className="text-[11px] font-bold text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+            Citizen Assistance Mode
+          </span>
+        </div>
+      )}
+
+      {/* Guide Headline */}
+      <div className="text-center space-y-3 mb-4 sm:mb-6">
         <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-900 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-blue-200/80 shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
           <span>{t.badgeText}</span>
@@ -45,10 +68,10 @@ export const Page1: React.FC<Page1Props> = ({ language, onHaveCard }) => {
         </p>
       </div>
 
-      {/* Three Minimalist Psychological Decision Cards */}
+      {/* 3 Clear Healthcare Guidance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
         
-        {/* OPTION 1: I HAVE AYUSHMAN CARD */}
+        {/* OPTION 1: SEARCH EMPANELED HOSPITALS */}
         <button
           onClick={onHaveCard}
           className="group relative text-left bg-white rounded-2xl p-6 border-2 border-blue-900/25 hover:border-blue-900 shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col justify-between overflow-hidden cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-100"
@@ -57,7 +80,7 @@ export const Page1: React.FC<Page1Props> = ({ language, onHaveCard }) => {
           
           <div className="relative z-10 space-y-3.5">
             <div className="w-12 h-12 rounded-xl bg-blue-900 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-              <CreditCard className="w-6 h-6" />
+              <Search className="w-6 h-6" />
             </div>
 
             <div>
@@ -95,7 +118,7 @@ export const Page1: React.FC<Page1Props> = ({ language, onHaveCard }) => {
           </div>
         </button>
 
-        {/* OPTION 2: APPLY FOR AYUSHMAN CARD (OFFICIAL GOVT PORTAL) */}
+        {/* OPTION 2: SCHEME DETAILS & NHA LINK */}
         <div
           onClick={handleApplyOfficial}
           className="group relative text-left bg-white rounded-2xl p-6 border-2 border-emerald-600/30 hover:border-emerald-600 shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col justify-between overflow-hidden cursor-pointer focus:outline-none focus:ring-4 focus:ring-emerald-100"
@@ -104,7 +127,7 @@ export const Page1: React.FC<Page1Props> = ({ language, onHaveCard }) => {
 
           <div className="relative z-10 space-y-3.5">
             <div className="w-12 h-12 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-              <FileCheck2 className="w-6 h-6" />
+              <BookOpen className="w-6 h-6" />
             </div>
 
             <div>
@@ -145,7 +168,7 @@ export const Page1: React.FC<Page1Props> = ({ language, onHaveCard }) => {
           </div>
         </div>
 
-        {/* OPTION 3: I DON'T HAVE AYUSHMAN CARD (YOUTUBE TUTORIAL) */}
+        {/* OPTION 3: VIDEO GUIDE & FAQS */}
         <div
           onClick={handleDontHaveCard}
           className="group relative text-left bg-white rounded-2xl p-6 border-2 border-amber-500/30 hover:border-amber-600 shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col justify-between overflow-hidden cursor-pointer focus:outline-none focus:ring-4 focus:ring-amber-100"
