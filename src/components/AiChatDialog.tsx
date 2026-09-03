@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Bot, Sparkles, X, Mic, Square, Send, Phone, AlertTriangle, 
-  MapPin, RefreshCw, User, Stethoscope, ChevronDown 
+  MapPin, RefreshCw, User, Stethoscope, ChevronDown, Key, Settings, CheckCircle2, Shield
 } from 'lucide-react';
 import { Language } from '../translations';
 
@@ -46,6 +46,14 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
   const [isListening, setIsListening] = useState<boolean>(false);
   const [aiProcessing, setAiProcessing] = useState<boolean>(false);
 
+  // Key Inspector & Configuration State
+  const [showKeySettings, setShowKeySettings] = useState<boolean>(false);
+  const [customKeyInput, setCustomKeyInput] = useState<string>(
+    () => localStorage.getItem('CUSTOM_GEMINI_KEY') || (import.meta.env.VITE_GEMINI_API_KEY as string)?.trim() || ''
+  );
+  const [testStatus, setTestStatus] = useState<string | null>(null);
+  const [isTestingKey, setIsTestingKey] = useState<boolean>(false);
+
   const defaultGreeting = language === 'hi'
     ? 'नमस्ते! मैं आपका आयुष्मान एआई स्वास्थ्य सहायक हूँ। आप बोलकर या लिखकर अपने लक्षण, बीमारी या अस्पताल के बारे में पूछ सकते हैं।'
     : 'Namaste! I am your Ayushman AI Health Assistant. Speak or type your symptoms, disease, or hospital needs, and I will guide you to the right care.';
@@ -69,6 +77,24 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isOpen]);
+
+  const handleTestKey = async () => {
+    setIsTestingKey(true);
+    setTestStatus('Pinging Google Gemini API...');
+    try {
+      localStorage.setItem('CUSTOM_GEMINI_KEY', customKeyInput.trim());
+      const res = await callGeminiApi({
+        contents: [{ parts: [{ text: 'ping' }] }]
+      });
+      if (res) {
+        setTestStatus('✅ Success! Google Gemini connected successfully (HTTP 200).');
+      }
+    } catch (e: any) {
+      setTestStatus(`❌ Google response: ${e?.message || 'HTTP 401 Unauthorized'}`);
+    } finally {
+      setIsTestingKey(false);
+    }
+  };
 
   // Handle Voice Recording
   const toggleRecording = async () => {
@@ -116,6 +142,8 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
     }
   };
 
+  const generateMessageId = () => `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
   // Shared processor for AI response
   const handleAiParsedResult = (parsedData: any, userPrompt?: string) => {
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -129,7 +157,7 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
       setMessages(prev => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: generateMessageId(),
           sender: 'ai',
           text: emergencyReply,
           timestamp: nowTime,
@@ -169,7 +197,7 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
     setMessages(prev => [
       ...prev,
       {
-        id: Date.now().toString(),
+        id: generateMessageId(),
         sender: 'ai',
         text: responseText,
         timestamp: nowTime,
@@ -209,6 +237,77 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
     return { isEmergency, keyword, filter, location: null };
   };
 
+  // Universal Gemini caller trying all 3 auth protocols: x-goog-api-key, Bearer token, & query param
+  const callGeminiApi = async (body: any) => {
+    const rawKey = (localStorage.getItem('CUSTOM_GEMINI_KEY') || import.meta.env.VITE_GEMINI_API_KEY || '').trim();
+    if (!rawKey) throw new Error('API_KEY_MISSING');
+
+    const authMethods: { name: string; url: (m: string) => string; headers: Record<string, string> }[] = [
+      // 1. Modern x-goog-api-key header
+      {
+        name: 'x-goog-api-key header',
+        url: (m: string) => `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': rawKey }
+      },
+      // 2. OAuth2 / Bearer token header
+      {
+        name: 'Authorization: Bearer header',
+        url: (m: string) => `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${rawKey}` }
+      },
+      // 3. Query string key parameter
+      {
+        name: 'URL ?key= query parameter',
+        url: (m: string) => `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(rawKey)}`,
+        headers: { 'Content-Type': 'application/json' }
+      },
+      // 4. v1 endpoint with query parameter
+      {
+        name: 'v1 URL ?key= parameter',
+        url: (m: string) => `https://generativelanguage.googleapis.com/v1/models/${m}:generateContent?key=${encodeURIComponent(rawKey)}`,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    ];
+
+    const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-flash-lite-latest'];
+    const errorSummaries: string[] = [];
+
+    for (const method of authMethods) {
+      for (const model of models) {
+        try {
+          const endpointUrl = method.url(model);
+          const response = await fetch(endpointUrl, {
+            method: 'POST',
+            headers: method.headers,
+            body: JSON.stringify(body)
+          });
+
+          if (response.ok) {
+            console.log(`[Gemini] Authenticated successfully via ${method.name} using ${model}`);
+            return await response.json();
+          }
+
+          const responseText = await response.text().catch(() => '');
+          let errDesc = '';
+          try {
+            const errObj = JSON.parse(responseText);
+            errDesc = errObj?.error?.message || responseText;
+          } catch {
+            errDesc = responseText || response.statusText;
+          }
+
+          console.warn(`[Gemini ${method.name} | ${model}] HTTP ${response.status}: ${errDesc}`);
+          errorSummaries.push(`[${method.name}]: ${errDesc}`);
+        } catch (fetchErr: any) {
+          errorSummaries.push(`[${method.name}]: ${fetchErr.message}`);
+        }
+      }
+    }
+
+    const primaryError = errorSummaries[0] || 'Authentication failed on all methods';
+    throw new Error(primaryError);
+  };
+
   // Process Audio
   const processAudioWithGemini = async (base64Audio: string, mimeType: string) => {
     setAiProcessing(true);
@@ -217,7 +316,7 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
     setMessages(prev => [
       ...prev,
       {
-        id: Date.now().toString(),
+        id: generateMessageId(),
         sender: 'user',
         text: language === 'hi' ? '🎤 [आवाज़ संदेश भेजा गया]' : '🎤 [Voice message sent]',
         timestamp: nowTime
@@ -225,12 +324,6 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
     ]);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim();
-      if (!apiKey || apiKey.startsWith('AQ.')) {
-        throw new Error('API_KEY_INVALID_OR_UNAUTHORIZED');
-      }
-
-      const targetModel = 'models/gemini-flash-lite-latest';
       const prompt = `
         You are an intelligent medical triage and UI controller for an Indian PM-JAY hospital app.
         Analyze the user's spoken audio (which could be in Hindi, English, Hinglish, or regional dialects).
@@ -250,46 +343,31 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
         }
       `;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${targetModel}:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inlineData: { mimeType, data: base64Audio } }
-            ]
-          }]
-        })
+      const data = await callGeminiApi({
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType, data: base64Audio } }
+          ]
+        }]
       });
 
-      if (!response.ok) {
-        if (response.status === 401) throw new Error('API_KEY_INVALID_OR_UNAUTHORIZED');
-        throw new Error(`API returned ${response.status}`);
-      }
-
-      const data = await response.json();
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '{}';
       const cleanJsonString = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
       const parsedData = JSON.parse(cleanJsonString);
 
       handleAiParsedResult(parsedData);
     } catch (error: any) {
-      console.warn("AI Voice Processing note:", error?.message || error);
-      const isKeyIssue = error?.message === 'API_KEY_INVALID_OR_UNAUTHORIZED';
-
+      console.error("AI Voice Processing detail:", error?.message || error);
+      
       setMessages(prev => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: generateMessageId(),
           sender: 'ai',
-          text: isKeyIssue
-            ? (language === 'hi' 
-                ? '⚠️ जेमिनी API कुंजी अमान्य (401) है। कृपया .env फ़ाइल में AI Studio (AIzaSy...) कुंजी दर्ज करें। आप नीचे दिए गए बटनों या लिखकर भी खोज सकते हैं।' 
-                : '⚠️ Gemini API key is unauthorized (401). Please add a valid Google AI Studio key (starts with AIzaSy...) in your .env file. You can also type or use the quick buttons below.')
-            : (language === 'hi' 
-                ? 'क्षमा करें, आवाज़ समझ नहीं आई। कृपया दोबारा प्रयास करें या लिखकर पूछें।' 
-                : 'Could not process voice audio. Please try again or type your question.'),
+          text: language === 'hi' 
+            ? `⚠️ आवाज़ संदेश प्रोसेस नहीं हो पाया: ${error?.message || 'Google API error'}. कृपया लिखकर प्रयास करें।`
+            : `⚠️ Voice audio error: ${error?.message || 'Google API error'}. Please type your question or use quick buttons.`,
           timestamp: nowTime
         }
       ]);
@@ -310,7 +388,7 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
     setMessages(prev => [
       ...prev,
       {
-        id: Date.now().toString(),
+        id: generateMessageId(),
         sender: 'user',
         text: query,
         timestamp: nowTime
@@ -320,14 +398,6 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
     setAiProcessing(true);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim();
-      
-      // If no key or token starting with AQ. (not an AI studio key), use smart local triage directly
-      if (!apiKey || apiKey.startsWith('AQ.')) {
-        throw new Error('API_KEY_INVALID_OR_UNAUTHORIZED');
-      }
-
-      const targetModel = 'models/gemini-flash-lite-latest';
       const prompt = `
         You are an intelligent medical triage assistant for an Indian PM-JAY hospital search system.
         Analyze the user's typed message: "${query}".
@@ -347,46 +417,35 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
         }
       `;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${targetModel}:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
-        })
+      const data = await callGeminiApi({
+        contents: [{ parts: [{ text: prompt }] }]
       });
 
-      if (!response.ok) {
-        if (response.status === 401) throw new Error('API_KEY_INVALID_OR_UNAUTHORIZED');
-        throw new Error(`API returned ${response.status}`);
-      }
-
-      const data = await response.json();
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '{}';
       const cleanJsonString = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
       const parsedData = JSON.parse(cleanJsonString);
 
       handleAiParsedResult(parsedData, query);
     } catch (err: any) {
-      console.warn("AI Text Processing fallback active:", err?.message || err);
+      console.warn("Gemini API fallback to smart local triage:", err?.message || err);
 
       // Smart local triage fallback executes immediately!
       const fallbackData = performLocalFallbackTriage(query);
       handleAiParsedResult(fallbackData, query);
 
-      // If key is invalid, append a polite reminder to user in chat
-      if (err?.message === 'API_KEY_INVALID_OR_UNAUTHORIZED') {
-        setMessages(prev => [
-          ...prev,
-          {
-            id: (Date.now() + 1).toString(),
-            sender: 'ai',
-            text: language === 'hi'
-              ? '💡 सूचना: जेमिनी API key (401) अमान्य है, इसलिए स्मार्ट ऑफलाइन ट्राइएज का उपयोग किया गया है। पूर्ण AI सुविधाओं के लिए .env में मान्य AI Studio Key (AIzaSy...) जोड़ें।'
-              : '💡 Note: Gemini API key returned 401 (Unauthorized), so smart offline triage was used. To enable full generative AI responses, add a valid Google AI Studio key (starts with AIzaSy...) to your .env file.',
-            timestamp: nowTime
-          }
-        ]);
-      }
+      // Inform user of the exact Google error response for complete transparency
+      const errorDetail = err?.message || 'Google 401 Unauthorized';
+      setMessages(prev => [
+        ...prev,
+        {
+          id: generateMessageId(),
+          sender: 'ai',
+          text: language === 'hi'
+            ? `💡 सूचना: गूगल जेमिनी से प्रतिक्रिया: "${errorDetail}". स्मार्ट लोकल ट्राइएज ने आपकी खोज सक्रिय कर दी है।`
+            : `💡 Notice: Google Gemini response: "${errorDetail}". Smart offline triage was used to handle your request.`,
+          timestamp: nowTime
+        }
+      ]);
     } finally {
       setAiProcessing(false);
     }
@@ -442,15 +501,79 @@ export const AiChatDialog: React.FC<AiChatDialogProps> = ({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
-              title={language === 'hi' ? 'बंद करें' : 'Close'}
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShowKeySettings(prev => !prev)}
+                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
+                  showKeySettings ? 'bg-white/30 text-white' : 'bg-white/10 hover:bg-white/20 text-blue-200'
+                }`}
+                title="Gemini API Key Settings & Test"
+              >
+                <Key className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+                title={language === 'hi' ? 'बंद करें' : 'Close'}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
+
+          {/* Key Settings Drawer */}
+          {showKeySettings && (
+            <div className="bg-slate-900 text-white p-3 text-xs space-y-2.5 border-b border-slate-700 animate-in slide-in-from-top-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold flex items-center gap-1.5 text-blue-300">
+                  <Shield className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Gemini API Key Setup</span>
+                </span>
+                <span className="text-[10px] text-slate-400">LocalStorage / .env</span>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Paste Gemini API Key (AQ... or AIza...)"
+                value={customKeyInput}
+                onChange={(e) => setCustomKeyInput(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              />
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleTestKey}
+                  disabled={isTestingKey || !customKeyInput.trim()}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-[11px]"
+                >
+                  {isTestingKey && <RefreshCw className="w-3 h-3 animate-spin" />}
+                  <span>{isTestingKey ? 'Testing...' : 'Test Connection'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem('CUSTOM_GEMINI_KEY', customKeyInput.trim());
+                    alert('Key saved successfully!');
+                  }}
+                  className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-1.5 px-3 rounded-lg text-[11px] cursor-pointer"
+                >
+                  Save
+                </button>
+              </div>
+
+              {testStatus && (
+                <div className={`p-2 rounded-lg text-[10px] font-mono leading-relaxed ${
+                  testStatus.startsWith('✅') ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-rose-950 text-rose-300 border border-rose-800'
+                }`}>
+                  {testStatus}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Quick Action Pill Row */}
           <div className="bg-slate-50 border-b border-slate-100 px-3 py-2 flex items-center gap-1.5 overflow-x-auto text-[11px] no-scrollbar">
