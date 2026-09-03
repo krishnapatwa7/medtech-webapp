@@ -4,8 +4,9 @@ export interface SearchTaxonomyCategory {
   id: string;
   category: string;
   categoryHi: string;
-  specialtyKeywords: string[];
-  synonyms: string[];
+  specialtyCodes: string[];    // Exact PM-JAY codes from Speciality_ID_Data.csv
+  specialtyKeywords: string[]; // Descriptive word stems (length >= 4)
+  synonyms: string[];          // Patient query keywords/symptoms
 }
 
 export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
@@ -13,10 +14,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'cardio',
     category: 'Cardiology & Heart Surgery',
     categoryHi: 'हृदय रोग एवं बाईपास',
-    specialtyKeywords: [
-      'cardiology', 'cardio-thoracic & vascular surgery', 'cardiovascular and cardiac surgery', 
-      'cardio', 'cardiac', 'mc', 'sv', 'cd', 'cv'
-    ],
+    specialtyCodes: ['100002', '100003', '100235', '100236', 'MC', 'SV', 'CD', 'CV'],
+    specialtyKeywords: ['cardiology', 'cardio-thoracic', 'cardiovascular', 'cardiac'],
     synonyms: [
       'heart', 'cardiac', 'cardio', 'chest pain', 'heart attack', 'attack', 'bypass', 
       'angioplasty', 'ecg', 'bp', 'hypertension', 'blood pressure', 'valve', 'pacemaker', 
@@ -28,9 +27,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'ortho',
     category: 'Orthopaedics & Joint Care',
     categoryHi: 'हड्डी रोग एवं जोड़ प्रत्यारोपण',
-    specialtyKeywords: [
-      'orthopaedics', 'orthopedics', 'polytrauma', 'joint replacement', 'sb', 'or', 'st'
-    ],
+    specialtyCodes: ['100015', '100020', '100245', 'SB', 'OR', 'ST'],
+    specialtyKeywords: ['orthopaedics', 'orthopedics', 'polytrauma'],
     synonyms: [
       'bone', 'bones', 'fracture', 'joint', 'knee', 'hip', 'spine', 'back pain', 'slip disc', 
       'arthritis', 'ligament', 'plaster', 'ortho', 'orthopedic', 'orthopedics', 'orthopaedic', 
@@ -42,9 +40,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'eye',
     category: 'Ophthalmology (Eye Care)',
     categoryHi: 'नेत्र रोग एवं मोतियाबिंद',
-    specialtyKeywords: [
-      'ophthalmology', 'opthalmology', 'se', 'op'
-    ],
+    specialtyCodes: ['100013', '100228', 'SE', 'OP'],
+    specialtyKeywords: ['ophthalmology', 'opthalmology'],
     synonyms: [
       'eye', 'eyes', 'vision', 'cataract', 'glaucoma', 'retina', 'cornea', 'spectacles', 
       'glasses', 'motiyabind', 'lasik', 'blindness', 'conjunctivitis', 'aankh', 'netra', 
@@ -55,9 +52,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'kidney',
     category: 'Nephrology & Urology (Kidney & Urinary)',
     categoryHi: 'किडनी रोग व डायलिसिस एवं यूरोलॉजी',
-    specialtyKeywords: [
-      'urology', 'nephrology and urology', 'nephrology & dialysis', 'su', 'nu'
-    ],
+    specialtyCodes: ['100023', '100242', 'SU', 'NU'],
+    specialtyKeywords: ['urology', 'nephrology'],
     synonyms: [
       'kidney', 'renal', 'dialysis', 'urine', 'urinary', 'bladder', 'stone', 'kidney stone', 
       'prostate', 'nephro', 'nephrology', 'uro', 'urology', 'gurda', 'pathri', 'peshab', 
@@ -68,9 +64,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'maternity',
     category: 'Obstetrics & Gynaecology (Maternity & Women)',
     categoryHi: 'स्त्री एवं प्रसूति रोग',
-    specialtyKeywords: [
-      'obstetrics & gynaecology', 'obstetrics and gynaecology', 'gynecology & obstetrics', 'so', 'og'
-    ],
+    specialtyCodes: ['100012', '100241', 'SO', 'OG'],
+    specialtyKeywords: ['obstetrics', 'gynaecology', 'gynecology'],
     synonyms: [
       'pregnancy', 'pregnant', 'delivery', 'cesarean', 'c-section', 'maternity', 'labor', 
       'baby birth', 'women', 'lady', 'ladies', 'period', 'periods', 'menstruation', 'pcos', 
@@ -83,10 +78,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'child',
     category: 'Paediatrics & Neonatal (Child Care)',
     categoryHi: 'बाल रोग एवं शिशु सर्जरी',
-    specialtyKeywords: [
-      'paediatric medical management', 'paediatric surgery', 'neo-natal care packages', 
-      'paediatric cancer', 'pediatrics', 'pediatric surgery', 'mp', 'ss', 'mn', 'na', 'ps'
-    ],
+    specialtyCodes: ['100010', '100017', '100018', '100027', '100240', 'MN', 'MP', 'SS', 'NA', 'PS'],
+    specialtyKeywords: ['paediatric', 'pediatric', 'neo-natal'],
     synonyms: [
       'child', 'children', 'kid', 'kids', 'baby', 'babies', 'infant', 'newborn', 'neonatal', 
       'pediatric', 'pediatrics', 'pediatrician', 'paediatric', 'paediatrics', 'nicu', 'picu', 
@@ -98,10 +91,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'cancer',
     category: 'Oncology (Cancer Care)',
     categoryHi: 'कैंसर चिकित्सा व कीमोथेरेपी',
-    specialtyKeywords: [
-      'medical oncology', 'surgical oncology', 'radiation oncology', 'oncology investigations', 
-      'chemotherapy', 'radiotherapy', 'paediatric cancer', 'oncology', 'mo', 'mr', 'sc', 'ca', 'ct', 'rt', 'tmh', 'na'
-    ],
+    specialtyCodes: ['100008', '100021', '100022', '100027', '100221', '100222', '100223', '100249', 'MO', 'MR', 'SC', 'CA', 'CT', 'RT', 'TMH', 'NA'],
+    specialtyKeywords: ['oncology', 'chemotherapy', 'radiotherapy'],
     synonyms: [
       'cancer', 'tumor', 'tumour', 'oncology', 'oncologist', 'chemotherapy', 'chemo', 
       'radiation', 'radiotherapy', 'biopsy', 'leukemia', 'carcinoma', 'malignancy', 
@@ -112,10 +103,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'neuro',
     category: 'Neurology & Neurosurgery (Brain & Nerves)',
     categoryHi: 'मस्तिष्क एवं तंत्रिका रोग (न्यूरो)',
-    specialtyKeywords: [
-      'neurosurgery', 'neurology', 'neuro-surgery', 'neuro surgery', 'interventional neuroradiology', 
-      'sn', 'ni', 'ns', 'in'
-    ],
+    specialtyCodes: ['100011', '100244', '100243', '100007', 'SN', 'NS', 'NI', 'IN'],
+    specialtyKeywords: ['neurosurgery', 'neurology', 'neuro-surgery', 'neuroradiology'],
     synonyms: [
       'brain', 'neuro', 'neurology', 'neurologist', 'neurosurgery', 'stroke', 'paralysis', 
       'seizure', 'epilepsy', 'fits', 'migraine', 'headache', 'nerve', 'spinal cord', 
@@ -127,9 +116,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'gastro',
     category: 'Gastroenterology (Stomach & Liver)',
     categoryHi: 'पेट, लिवर व पाचन रोग',
-    specialtyKeywords: [
-      'medical gastroenterology', 'abdomen/gi surgery', 'gm', 'ag'
-    ],
+    specialtyCodes: ['100238', '100239', 'GM', 'AG'],
+    specialtyKeywords: ['gastroenterology', 'abdomen/gi surgery'],
     synonyms: [
       'stomach', 'gastric', 'gastro', 'gastroenterology', 'liver', 'digestion', 'digestive', 
       'acidity', 'gas', 'endoscopy', 'colonoscopy', 'jaundice', 'hepatitis', 'gallbladder', 
@@ -141,9 +129,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'pulmo',
     category: 'Pulmonology & Respiratory (Lungs & Chest)',
     categoryHi: 'फेफड़े एवं श्वसन रोग',
-    specialtyKeywords: [
-      'pulmonology', 'pp'
-    ],
+    specialtyCodes: ['100217', 'PP'],
+    specialtyKeywords: ['pulmonology'],
     synonyms: [
       'lung', 'lungs', 'pulmonology', 'pulmonologist', 'chest', 'breath', 'breathing', 
       'breathlessness', 'asthma', 'cough', 'tuberculosis', 'tb', 'pneumonia', 'respiratory', 
@@ -155,9 +142,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'ent',
     category: 'ENT (Ear, Nose & Throat)',
     categoryHi: 'कान, नाक एवं गला रोग',
-    specialtyKeywords: [
-      'ent', 'otorhinolaryngology', 'head and neck surgery', 'sl', 'hn'
-    ],
+    specialtyCodes: ['100016', '100229', '100233', 'SL', 'ENT', 'HN'],
+    specialtyKeywords: ['ent', 'otorhinolaryngology', 'head and neck surgery'],
     synonyms: [
       'ent', 'ear', 'nose', 'throat', 'hearing', 'deaf', 'ear pain', 'tonsils', 'tonsil', 
       'sinus', 'sinusitis', 'otorhinolaryngology', 'vocal', 'kaan', 'naak', 'gala', 
@@ -168,9 +154,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'dental',
     category: 'Dentistry & Maxillofacial (Dental Care)',
     categoryHi: 'दंत रोग एवं ओरल सर्जरी',
-    specialtyKeywords: [
-      'dentistry', 'oral & maxillofacial surgery', 'di', 'sm'
-    ],
+    specialtyCodes: ['100014', '100227', 'SM', 'DI'],
+    specialtyKeywords: ['dentistry', 'maxillofacial'],
     synonyms: [
       'dental', 'dentist', 'dentistry', 'teeth', 'tooth', 'gums', 'cavity', 'root canal', 
       'rct', 'braces', 'extraction', 'oral', 'daant', 'daant dard', 'masuda', 'दांत', 
@@ -181,9 +166,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'skin',
     category: 'Dermatology (Skin Care)',
     categoryHi: 'त्वचा एवं चर्म रोग',
-    specialtyKeywords: [
-      'skin', 'skn'
-    ],
+    specialtyCodes: ['100234', 'SKN'],
+    specialtyKeywords: ['skin', 'dermatology'],
     synonyms: [
       'skin', 'derma', 'dermatology', 'dermatologist', 'rash', 'allergy', 'itching', 
       'eczema', 'psoriasis', 'fungal', 'infection', 'acne', 'pimples', 'chamdi', 'tvacha', 
@@ -194,10 +178,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'trauma',
     category: 'Emergency & Critical Care / Trauma',
     categoryHi: 'आपातकालीन चिकित्सा व ट्रॉमा',
-    specialtyKeywords: [
-      'emergency room packages', 'emergency room packages (care requiring less than 12 hrs stay)', 
-      'critical care', 'polytrauma', 'ambulance services', 'er', 'errt', 'cc', 'st', 'as'
-    ],
+    specialtyCodes: ['100004', '100213', '100230', '100114', 'ER', 'ERRT', 'CC', 'AS'],
+    specialtyKeywords: ['emergency room', 'critical care', 'ambulance services'],
     synonyms: [
       'emergency', 'casualty', 'trauma', 'accident', 'icu', 'critical care', 'ambulance', 
       'bleeding', 'fracture emergency', 'chot', 'durghatna', 'aapatkal', 'aapatkaleen', 
@@ -208,10 +190,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'burns',
     category: 'Burns & Plastic Surgery',
     categoryHi: 'बर्न यूनिट एवं प्लास्टिक सर्जरी',
-    specialtyKeywords: [
-      'burns management', 'burns and plastic surgery', 'plastic and reconstructive surgery', 
-      'bm', 'bp', 'sp'
-    ],
+    specialtyCodes: ['100001', '100019', '100246', 'BM', 'SP', 'BP'],
+    specialtyKeywords: ['burns management', 'plastic and reconstructive', 'burns and plastic'],
     synonyms: [
       'burn', 'burns', 'fire burn', 'acid burn', 'plastic surgery', 'reconstructive', 
       'cosmetic surgery', 'skin graft', 'grafting', 'jalna', 'aag', 'जलना', 'प्लास्टिक सर्जरी', 'अग्नि'
@@ -221,10 +201,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'general',
     category: 'General Medicine & General Surgery',
     categoryHi: 'सामान्य चिकित्सा एवं सामान्य सर्जरी',
-    specialtyKeywords: [
-      'general medicine', 'general surgery', 'consultation', 'general procedure', 
-      'mg', 'sg', 'gs', 'cn', 'gp'
-    ],
+    specialtyCodes: ['100005', '100006', '100214', '100232', '100237', 'MG', 'SG', 'CN', 'GP', 'GS'],
+    specialtyKeywords: ['general medicine', 'general surgery'],
     synonyms: [
       'general medicine', 'general physician', 'general surgery', 'fever', 'cold', 
       'infection', 'dengue', 'malaria', 'typhoid', 'weakness', 'diabetes', 'sugar', 
@@ -236,10 +214,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'ayush',
     category: 'AYUSH & Alternative Medicine',
     categoryHi: 'आयुष एवं प्राकृतिक चिकित्सा',
-    specialtyKeywords: [
-      'ayurveda', 'naturopathy', 'yoga and naturopathy', 'unani', 'siddha', 'yoga', 
-      'ay', 'np', 'ygn', 'un', 'sid', 'yg'
-    ],
+    specialtyCodes: ['100194', '100250', '100251', '100252', '100253', '100254', '100256', 'YG', 'AY', 'NP', 'YGN', 'UN', 'SID'],
+    specialtyKeywords: ['ayurveda', 'naturopathy', 'yoga and naturopathy', 'unani', 'siddha'],
     synonyms: [
       'ayurveda', 'ayush', 'herbal', 'natural', 'naturopathy', 'yoga', 'unani', 'siddha', 
       'homeopathy', 'desi', 'jadi buti', 'आयुर्वेद', 'आयुष', 'प्राकृतिक चिकित्सा', 'योग', 'यूनानी'
@@ -249,9 +225,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'mental',
     category: 'Mental Health & Psychiatry',
     categoryHi: 'मानसिक स्वास्थ्य एवं मनोरोग',
-    specialtyKeywords: [
-      'mental disorders packages', 'behavioural therapy', 'mm', 'bt'
-    ],
+    specialtyCodes: ['100009', '100226', 'MM', 'BT'],
+    specialtyKeywords: ['mental disorders', 'behavioural therapy'],
     synonyms: [
       'mental', 'psychiatry', 'psychiatrist', 'psychology', 'depression', 'anxiety', 
       'stress', 'insomnia', 'sleep', 'bipolar', 'counseling', 'dimagi', 'manasik', 
@@ -262,9 +237,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'physio',
     category: 'Physiotherapy & Rehabilitation',
     categoryHi: 'फिजियोथेरेपी एवं पुनर्वास',
-    specialtyKeywords: [
-      'physiotherapy', 'pt'
-    ],
+    specialtyCodes: ['100225', 'PT'],
+    specialtyKeywords: ['physiotherapy'],
     synonyms: [
       'physiotherapy', 'physiotherapist', 'rehab', 'rehabilitation', 'exercise', 
       'physical therapy', 'physio', 'paralysis exercise', 'फिजियोथेरेपी', 'व्यायाम'
@@ -274,10 +248,8 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     id: 'diag',
     category: 'Diagnostics & Radiology',
     categoryHi: 'जांच, रेडियोलॉजी एवं पैथोलॉजी',
-    specialtyKeywords: [
-      'radiology', 'interventional radiology', 'laboratory medicine', 'nuclear medicine', 
-      'biopsies', 'ri', 'rp', 'lb', 'nm', 'by'
-    ],
+    specialtyCodes: ['100215', '100216', '100218', '100219', '100220', 'RI', 'RP', 'LB', 'NM', 'BY'],
+    specialtyKeywords: ['radiology', 'interventional radiology', 'laboratory medicine', 'nuclear medicine', 'biopsies'],
     synonyms: [
       'x-ray', 'xray', 'mri', 'ct scan', 'ultrasound', 'sonography', 'pathology', 
       'blood test', 'lab', 'biopsy', 'scan', 'जांच', 'एक्स-रे', 'एमआरआई', 'सीटी स्कैन', 
@@ -285,6 +257,56 @@ export const MEDICAL_TAXONOMY: SearchTaxonomyCategory[] = [
     ]
   }
 ];
+
+export const SPECIALTY_HINDI_MAP: Record<string, string> = {
+  'Neurosurgery': 'न्यूरोसर्जरी',
+  'Neuro-Surgery': 'न्यूरोसर्जरी',
+  'Neurology': 'न्यूरोलॉजी',
+  'Interventional Neuroradiology': 'इंटरवेंशनल न्यूरोरेडियोलॉजी',
+  'Cardiology': 'हृदय रोग (कार्डियोलॉजी)',
+  'Cardio-thoracic & Vascular surgery': 'कार्डियो-थोरैसिक सर्जरी',
+  'Cardiovascular And Cardiac Surgery': 'कार्डियोवैस्कुलर एवं हार्ट सर्जरी',
+  'Medical Oncology': 'मेडिकल ऑन्कोलॉजी (कैंसर)',
+  'Surgical Oncology': 'सर्जिकल ऑन्कोलॉजी (कैंसर सर्जरी)',
+  'Radiation Oncology': 'रेडिएशन ऑन्कोलॉजी',
+  'Paediatric Cancer': 'बाल कैंसर चिकित्सा',
+  'Orthopaedics': 'हड्डी रोग (ऑर्थोपेडिक्स)',
+  'Polytrauma': 'पॉलीट्रामा एवं दुर्घटना चिकित्सा',
+  'Ophthalmology': 'नेत्र रोग (ऑप्थल्मोलॉजी)',
+  'Opthalmology': 'नेत्र रोग (मोतियाबिंद व दृष्टि)',
+  'Nephrology And Urology': 'नेफ्रोलॉजी एवं यूरोलॉजी (किडनी)',
+  'Urology': 'यूरोलॉजी (मूत्र रोग)',
+  'Obstetrics & Gynaecology': 'स्त्री एवं प्रसूति रोग',
+  'Obstetrics And Gynaecology': 'स्त्री एवं प्रसूति रोग',
+  'Paediatric Medical management': 'बाल चिकित्सा (पीडियाट्रिक्स)',
+  'Paediatric Surgery': 'बाल शल्य चिकित्सा (शिशु सर्जरी)',
+  'Neo-natal care Packages': 'नवजात शिशु गहन चिकित्सा',
+  'Medical Gastroenterology': 'गैस्ट्रोएंटरोलॉजी (पेट व पाचन)',
+  'Abdomen/GI Surgery': 'उदर व जीआई सर्जरी',
+  'Pulmonology': 'फेफड़े एवं श्वसन रोग',
+  'ENT': 'कान, नाक एवं गला (ईएनटी)',
+  'Otorhinolaryngology': 'ईएनटी (कान, नाक, गला)',
+  'Head and Neck Surgery': 'सिर एवं गर्दन सर्जरी',
+  'Dentistry': 'दंत चिकित्सा (डेंटल)',
+  'Oral & Maxillofacial Surgery': 'ओरल व मैक्सिलोफेशियल सर्जरी',
+  'Emergency Room Packages (Care requiring less than 12 hrs stay)': 'आपातकालीन कक्ष चिकित्सा',
+  'Emergency Room Packages': 'आपातकालीन चिकित्सा',
+  'General Medicine': 'सामान्य चिकित्सा (जनरल मेडिसिन)',
+  'General Surgery': 'सामान्य सर्जरी',
+  'Critical Care': 'क्रिटिकल केयर (आईसीयू)',
+  'Burns Management': 'बर्न्स व बर्न केयर',
+  'Burns And Plastic Surgery': 'बर्न व प्लास्टिक सर्जरी',
+  'Plastic and Reconstructive Surgery': 'प्लास्टिक व पुनर्निर्माण सर्जरी',
+  'Infectious Diseases': 'संक्रामक रोग चिकित्सा',
+  'Organ & Tissue Transplant': 'अंग व ऊतक प्रत्यारोपण',
+  'Palliative Medicine': 'उपशामक चिकित्सा (पैलिएटिव)',
+  'Mental Disorders Packages': 'मानसिक स्वास्थ्य एवं मनोरोग',
+  'Behavioural therapy': 'व्यवहार थेरेपी',
+  'Physiotherapy': 'फिजियोथेरेपी',
+  'Radiology': 'रेडियोलॉजी',
+  'Interventional Radiology': 'इंटरवेंशनल रेडियोलॉजी',
+  'Laboratory Medicine': 'पैथोलॉजी व लैब मेडिसिन'
+};
 
 export interface QuickSuggestion {
   id: string;
@@ -341,31 +363,36 @@ export function levenshteinDistance(s1: string, s2: string): number {
 }
 
 /**
- * Checks if query token is an exact, prefix, or typo fuzzy match to target token
+ * Checks if query token is an exact, prefix, or tight typo fuzzy match to target token.
+ * Prevents false positives like 'brain' matching 'baruin'.
  */
 export function isFuzzyMatch(queryToken: string, targetToken: string): boolean {
   if (!queryToken || !targetToken) return false;
   if (queryToken === targetToken) return true;
 
-  // Do not fuzzy match short tokens (< 4 chars) to prevent false positives (like 'ear' matching 'heart')
+  // Do not fuzzy match short tokens (< 4 chars) to prevent false positives
   if (queryToken.length < 4 || targetToken.length < 4) return false;
 
   // Prefix matching for query token >= 4 chars (e.g. 'ortho' -> 'orthopaedics', 'cardio' -> 'cardiology')
   if (targetToken.startsWith(queryToken)) return true;
 
-  // Edit distance check for typo tolerance (e.g. 'orthopedic' -> 'orthopaedics', 'apolo' -> 'apollo')
-  if (Math.abs(queryToken.length - targetToken.length) > 2) return false;
+  // First character MUST match for typo tolerance
+  if (queryToken[0] !== targetToken[0]) return false;
+
+  const lenDiff = Math.abs(queryToken.length - targetToken.length);
+  if (lenDiff > 1 && Math.max(queryToken.length, targetToken.length) < 8) return false;
 
   const len = Math.max(queryToken.length, targetToken.length);
-  const maxDistance = len <= 5 ? 1 : 2;
+  // Only allow 1 edit distance for words up to 7 characters. Distance 2 only for 8+ chars.
+  const maxDistance = len < 8 ? 1 : 2;
   return levenshteinDistance(queryToken, targetToken) <= maxDistance;
 }
 
 export interface EnrichedSearchResult {
   hospital: Hospital;
   relevanceScore: number;
-  matchedReason?: string;
-  matchedReasonHi?: string;
+  matchedSpecialty?: string;
+  matchedSpecialtyHi?: string;
 }
 
 /**
@@ -381,9 +408,11 @@ function normalizeText(text: string): string {
 
 /**
  * Intelligent search function:
- * Searches across hospital name (En/Hi), address (En/Hi), specialties (En/Codes/Hi),
- * medical taxonomy synonyms (symptoms, organs, everyday Hindi & Hinglish terms),
- * supports multi-token queries and typo-tolerant fuzzy matching.
+ * - Searches across hospital name, address, and authentic PM-JAY specialties.
+ * - If user searches for a disease/specialty (e.g. 'brain', 'heart'), returns hospitals that
+ *   ACTUALLY possess that specialty in the database.
+ * - Beside the Government/Private tag, ONLY displays the actual matched special specialty
+ *   from Speciality_ID_Data.csv. If no specialty is matched, nothing is shown.
  */
 export function searchHospitals(
   hospitals: Hospital[],
@@ -403,7 +432,7 @@ export function searchHospitals(
   for (const cat of MEDICAL_TAXONOMY) {
     let matched = false;
 
-    // 1. Check if whole query matches any synonym (useful for "chest pain", "heart attack", "back pain")
+    // 1. Check if whole query matches any synonym (useful for 'chest pain', 'heart attack', 'back pain')
     for (const syn of cat.synonyms) {
       const normSyn = normalizeText(syn);
       if (normSyn === normalizedQuery || (normSyn.includes(' ') && normalizedQuery.includes(normSyn))) {
@@ -412,10 +441,9 @@ export function searchHospitals(
       }
     }
 
-    // 2. Check each token against single-word synonyms or specialty keywords
+    // 2. Check each token against single-word synonyms
     if (!matched) {
       for (const token of queryTokens) {
-        // Match synonym
         for (const syn of cat.synonyms) {
           const normSyn = normalizeText(syn);
           if (normSyn === token || (token.length >= 4 && isFuzzyMatch(token, normSyn))) {
@@ -425,7 +453,6 @@ export function searchHospitals(
         }
         if (matched) break;
 
-        // Match keyword
         for (const kw of cat.specialtyKeywords) {
           const normKw = normalizeText(kw);
           if (normKw === token || (token.length >= 4 && isFuzzyMatch(token, normKw))) {
@@ -443,6 +470,9 @@ export function searchHospitals(
     }
   }
 
+  // Is this a condition/specialty query?
+  const isMedicalQuery = activeTaxonomies.length > 0;
+
   const scoredResults: EnrichedSearchResult[] = [];
 
   for (const hosp of hospitals) {
@@ -453,103 +483,98 @@ export function searchHospitals(
     const normType = normalizeText(hosp.type || '');
     const normTypeCode = normalizeText(hosp.typeCode || '');
 
-    // Map all hospital specialties to names & codes
-    const specialtyNames: string[] = [];
-    const specialtyCodes: string[] = [];
+    // Map all hospital specialties to authentic names from database
+    const hospitalCleanCodes: string[] = [];
+    const hospitalSpecialtyNames: string[] = [];
+
     for (const spec of hosp.specialties) {
       const clean = spec.trim().toUpperCase();
-      specialtyCodes.push(clean.toLowerCase());
+      hospitalCleanCodes.push(clean);
       const mapped = specialtyMap[clean];
-      if (mapped) specialtyNames.push(mapped.toLowerCase());
-      else specialtyNames.push(clean.toLowerCase());
+      if (mapped) hospitalSpecialtyNames.push(mapped);
     }
-    const combinedSpecialtiesText = specialtyNames.join(' ');
-    const combinedCodesText = specialtyCodes.join(' ');
 
     let totalScore = 0;
     let tokensMatchedCount = 0;
-    let primaryMatchReason = '';
-    let primaryMatchReasonHi = '';
+    let matchedSpecialty: string | undefined = undefined;
+    let matchedSpecialtyHi: string | undefined = undefined;
 
-    // Check full query phrase exact match on name
+    // 1. CHECK MEDICAL TAXONOMY MATCH (e.g. 'brain' -> Neurosurgery/Neurology, 'heart' -> Cardiology)
+    if (activeTaxonomies.length > 0) {
+      for (const tax of activeTaxonomies) {
+        // A) Exact code match in hospital's codes
+        const matchingCode = hospitalCleanCodes.find(c => tax.specialtyCodes.includes(c));
+        // B) Keyword stem match in hospital's mapped authentic specialty names
+        const matchingName = hospitalSpecialtyNames.find(name => {
+          const l = name.toLowerCase();
+          return tax.specialtyKeywords.some(kw => l.includes(kw));
+        });
+
+        if (matchingCode || matchingName) {
+          totalScore += 250;
+          tokensMatchedCount = Math.max(tokensMatchedCount, 1);
+
+          if (!matchedSpecialty) {
+            const authenticName = matchingName || (matchingCode ? (specialtyMap[matchingCode] || matchingCode) : undefined);
+            if (authenticName) {
+              matchedSpecialty = authenticName;
+              matchedSpecialtyHi = SPECIALTY_HINDI_MAP[authenticName] || authenticName;
+            }
+          }
+        }
+      }
+
+      // If the user searched specifically for a medical condition/organ and this hospital does NOT have it,
+      // skip it completely (prevents false matches like 'CHC BARUIN' for 'brain').
+      if (!matchedSpecialty) {
+        continue;
+      }
+    }
+
+    // 2. CHECK DIRECT SPECIALTY MATCH (e.g. user typed 'neurosurgery', 'cardiology', 'oncology')
+    if (!matchedSpecialty) {
+      for (const token of queryTokens) {
+        const directMatch = hospitalSpecialtyNames.find(name => name.toLowerCase().includes(token));
+        if (directMatch) {
+          totalScore += 180;
+          tokensMatchedCount++;
+          if (!matchedSpecialty) {
+            matchedSpecialty = directMatch;
+            matchedSpecialtyHi = SPECIALTY_HINDI_MAP[directMatch] || directMatch;
+          }
+        }
+      }
+    }
+
+    // 3. CHECK HOSPITAL NAME EXACT & PREFIX MATCHES
     if (normName.includes(normalizedQuery)) {
       totalScore += 200;
-      primaryMatchReason = `Hospital: ${hosp.name}`;
-      primaryMatchReasonHi = `अस्पताल: ${hosp.nameHi || hosp.name}`;
+      tokensMatchedCount = queryTokens.length;
     } else if (normNameHi && normNameHi.includes(normalizedQuery)) {
       totalScore += 200;
-      primaryMatchReason = `Hospital: ${hosp.nameHi}`;
-      primaryMatchReasonHi = `अस्पताल: ${hosp.nameHi}`;
+      tokensMatchedCount = queryTokens.length;
     }
 
-    // Check full query phrase match on specialties
-    if (combinedSpecialtiesText.includes(normalizedQuery)) {
-      totalScore += 180;
-      const matchedSpec = specialtyNames.find(s => s.includes(normalizedQuery)) || normalizedQuery;
-      primaryMatchReason = `Specialty: ${matchedSpec.toUpperCase()}`;
-      primaryMatchReasonHi = `उपलब्ध विशेषता: ${matchedSpec.toUpperCase()}`;
-    }
-
-    // Check each token
     for (const token of queryTokens) {
-      let tokenScore = 0;
-      let tokenMatched = false;
-
-      // 1. Hospital Name (English or Hindi)
       if (normName.includes(token) || (normNameHi && normNameHi.includes(token))) {
-        tokenScore += 80;
-        tokenMatched = true;
-        if (!primaryMatchReason) {
-          primaryMatchReason = `Name: ${hosp.name}`;
-          primaryMatchReasonHi = `अस्पताल नाम: ${hosp.nameHi || hosp.name}`;
-        }
+        totalScore += 60;
+        tokensMatchedCount++;
       } else {
-        // Name fuzzy match
+        // Tight typo match on name words only for general searches
         const nameWords = normName.split(' ');
         if (nameWords.some(w => isFuzzyMatch(token, w))) {
-          tokenScore += 50;
-          tokenMatched = true;
-          if (!primaryMatchReason) {
-            primaryMatchReason = `Name: ${hosp.name}`;
-            primaryMatchReasonHi = `अस्पताल नाम: ${hosp.nameHi || hosp.name}`;
-          }
+          totalScore += 30;
+          tokensMatchedCount++;
         }
       }
 
-      // 2. Specialty Direct Match
-      if (combinedSpecialtiesText.includes(token) || combinedCodesText.includes(token)) {
-        tokenScore += 70;
-        tokenMatched = true;
-        if (!primaryMatchReason) {
-          const spec = specialtyNames.find(s => s.includes(token)) || token;
-          primaryMatchReason = `Specialty: ${spec.toUpperCase()}`;
-          primaryMatchReasonHi = `विशेषता: ${spec.toUpperCase()}`;
-        }
-      } else {
-        // Specialty fuzzy match
-        const specWords = combinedSpecialtiesText.split(' ');
-        const fuzzyWord = specWords.find(w => isFuzzyMatch(token, w));
-        if (fuzzyWord) {
-          tokenScore += 45;
-          tokenMatched = true;
-          if (!primaryMatchReason) {
-            primaryMatchReason = `Specialty: ${fuzzyWord.toUpperCase()}`;
-            primaryMatchReasonHi = `विशेषता: ${fuzzyWord.toUpperCase()}`;
-          }
-        }
-      }
-
-      // 3. Address / City / District Match
+      // Address match
       if (normAddress.includes(token) || (normAddressHi && normAddressHi.includes(token))) {
-        tokenScore += 30;
-        tokenMatched = true;
-        if (!primaryMatchReason) {
-          primaryMatchReason = `Location: ${token.toUpperCase()}`;
-          primaryMatchReasonHi = `स्थान: ${token.toUpperCase()}`;
-        }
+        totalScore += 20;
+        tokensMatchedCount++;
       }
 
-      // 4. Hospital Type Match
+      // Type match
       if (
         normType.includes(token) || 
         normTypeCode === token ||
@@ -557,52 +582,28 @@ export function searchHospitals(
         (token === 'सरकारी' && (normType.includes('gov') || normTypeCode === 'g')) ||
         (token === 'निजी' && (normType.includes('priv') || normTypeCode === 'p'))
       ) {
-        tokenScore += 20;
-        tokenMatched = true;
-      }
-
-      if (tokenMatched) {
+        totalScore += 15;
         tokensMatchedCount++;
-        totalScore += tokenScore;
       }
     }
 
-    // Check Medical Taxonomy & Semantic Synonyms Match
-    for (const tax of activeTaxonomies) {
-      const hasTaxSpecialty = specialtyNames.some(spec => 
-        tax.specialtyKeywords.some(kw => spec.includes(kw))
-      ) || specialtyCodes.some(code => 
-        tax.specialtyKeywords.some(kw => kw.toUpperCase() === code.toUpperCase())
-      );
-
-      if (hasTaxSpecialty) {
-        totalScore += 90;
-        tokensMatchedCount = Math.max(tokensMatchedCount, 1);
-        if (!primaryMatchReason) {
-          primaryMatchReason = `Related care: ${tax.category}`;
-          primaryMatchReasonHi = `संबंधित सुविधा: ${tax.categoryHi}`;
-        }
-      }
-    }
-
-    // Hospital must match at least one criterion
+    // Only include if at least one meaningful match was made
     if (tokensMatchedCount > 0 || totalScore > 0) {
-      if (queryTokens.length > 1 && tokensMatchedCount === queryTokens.length) {
-        totalScore += 100;
-      }
-
       const enrichedHosp: Hospital = {
         ...hosp,
       };
 
-      (enrichedHosp as any).matchedReason = primaryMatchReason;
-      (enrichedHosp as any).matchedReasonHi = primaryMatchReasonHi;
+      (enrichedHosp as any).matchedSpecialty = matchedSpecialty;
+      (enrichedHosp as any).matchedSpecialtyHi = matchedSpecialtyHi;
+      // Keep matchedReason backwards-compatible with matchedSpecialty
+      (enrichedHosp as any).matchedReason = matchedSpecialty;
+      (enrichedHosp as any).matchedReasonHi = matchedSpecialtyHi;
 
       scoredResults.push({
         hospital: enrichedHosp,
         relevanceScore: totalScore,
-        matchedReason: primaryMatchReason,
-        matchedReasonHi: primaryMatchReasonHi
+        matchedSpecialty,
+        matchedSpecialtyHi
       });
     }
   }
@@ -611,7 +612,7 @@ export function searchHospitals(
   scoredResults.sort((a, b) => {
     const scoreDiff = b.relevanceScore - a.relevanceScore;
     
-    // If scores are in the same tier (difference < 40), sort by distance so the nearest hospital is first!
+    // If scores are in the same tier (difference < 40), sort by distance
     if (Math.abs(scoreDiff) < 40) {
       const distA = a.hospital.distanceKm ?? 9999;
       const distB = b.hospital.distanceKm ?? 9999;

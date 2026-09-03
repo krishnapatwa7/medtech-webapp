@@ -574,10 +574,11 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
                         <span>{displayMappedLabel}</span>
                       </span>
 
-                      {searchQuery.trim() && ((hosp as any).matchedReason || (hosp as any).matchedReasonHi) && (
-                        <span className="bg-emerald-50 text-emerald-800 border border-emerald-300/90 text-[11px] font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-2xs">
-                          <Sparkles className="w-3 h-3 text-emerald-600 shrink-0" />
-                          <span>{language === 'hi' ? ((hosp as any).matchedReasonHi || (hosp as any).matchedReason) : ((hosp as any).matchedReason || (hosp as any).matchedReasonHi)}</span>
+                      {/* Only display special matched specialty badge from real database; if nothing is matched nothing appears */}
+                      {searchQuery.trim() && (hosp as any).matchedSpecialty && (
+                        <span className="bg-sky-50 text-sky-900 border border-sky-200/90 text-[11px] font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-2xs">
+                          <Sparkles className="w-3 h-3 text-sky-600 shrink-0" />
+                          <span>{language === 'hi' ? ((hosp as any).matchedSpecialtyHi || (hosp as any).matchedSpecialty) : (hosp as any).matchedSpecialty}</span>
                         </span>
                       )}
                     </div>
