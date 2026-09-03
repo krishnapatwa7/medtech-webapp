@@ -4,11 +4,13 @@ import {
   ArrowLeft, MapPin, Navigation, Phone, Building2, ShieldCheck, 
   CheckCircle, RefreshCw, AlertCircle, Stethoscope, ChevronDown, 
   LocateFixed, Search, ChevronLeft, ChevronRight, ExternalLink, ArrowUp,
-  Mic, Square, AlertTriangle, X
+  Mic, Square, AlertTriangle, X, Sparkles, ChevronUp
 } from 'lucide-react';
 import { Language, translations } from '../translations';
 import { detectLocation, getBrowserGPS, getCityFromCoords, UserLocation } from '../utils/location';
 import { Hospital } from '../data/hospitals';
+import { searchHospitals, QUICK_SEARCH_SUGGESTIONS } from '../utils/hospitalSearch';
+import { AiChatDialog } from '../components/AiChatDialog';
 
 interface Page2Props {
   language: Language;
@@ -87,14 +89,23 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
   const [currentPage, setCurrentPage] = useState<number>(1);
   const ITEMS_PER_PAGE = 20;
 
-  // AI, Audio & TTS States
-  const [isListening, setIsListening] = useState<boolean>(false);
-  const [aiProcessing, setAiProcessing] = useState<boolean>(false);
+  // UI state for popular searches
+  const [showAllSuggestions, setShowAllSuggestions] = useState<boolean>(false);
+  const [searchFocused, setSearchFocused] = useState<boolean>(false);
+  const searchContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Emergency state
   const [isEmergency, setIsEmergency] = useState<boolean>(false);
-  const [pendingTts, setPendingTts] = useState<{ keyword: string } | null>(null);
-  
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
 
   const triggerGpsLocation = async () => {
     setLocationLoading(true);
@@ -241,228 +252,13 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
   }, [filterType, userLocation.lat, userLocation.lng]);
 
   const searchedHospitals = useMemo(() => {
-    const term = deferredSearchQuery.toLowerCase();
-    if (!term) return hospitals;
-
-    return hospitals.filter(hosp => {
-      const mappedSpecialties = hosp.specialties.map(code => (specialtyMap[code] || code).toLowerCase()).join(' ');
-      // Notice: we are checking if the term matches the hospital name OR the specialty
-      return hosp.name.toLowerCase().includes(term) || mappedSpecialties.includes(term);
-    });
+    return searchHospitals(hospitals, deferredSearchQuery, specialtyMap);
   }, [hospitals, deferredSearchQuery, specialtyMap]);
 
   const totalPages = Math.ceil(searchedHospitals.length / ITEMS_PER_PAGE);
   const paginatedHospitals = useMemo(() => {
     return searchedHospitals.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   }, [searchedHospitals, currentPage]);
-
-  // --- TEXT TO SPEECH EFFECT ---
-  useEffect(() => {
-    if (pendingTts && !csvLoading && !aiProcessing && 'speechSynthesis' in window) {
-      
-      const term = pendingTts.keyword.toLowerCase();
-      const matchingHospitals = hospitals.filter(hosp => {
-        const mappedSpecialties = hosp.specialties.map(code => (specialtyMap[code] || code).toLowerCase()).join(' ');
-        return hosp.name.toLowerCase().includes(term) || mappedSpecialties.includes(term);
-      });
-
-      const count = matchingHospitals.length;
-      const topHosp = count > 0 ? matchingHospitals[0] : null;
-      let speechText = '';
-
-      if (language === 'hi') {
-        const spokenSubject = pendingTts.keyword || 'इस खोज';
-        if (count === 0) {
-          speechText = `क्षमा करें, मुझे ${spokenSubject} के लिए कोई अस्पताल नहीं मिला।`;
-        } else {
-          speechText = `मुझे ${spokenSubject} के लिए ${count} अस्पताल मिले हैं। सबसे करीब ${topHosp?.nameHi} है।`;
-        }
-      } else {
-        const spokenSubject = pendingTts.keyword || 'this search';
-        if (count === 0) {
-          speechText = `Sorry, I couldn't find any results for ${spokenSubject}.`;
-        } else {
-          speechText = `I found ${count} hospitals for ${spokenSubject}. The closest is ${topHosp?.name}.`;
-        }
-      }
-
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(speechText);
-      utterance.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
-      window.speechSynthesis.speak(utterance);
-
-      setPendingTts(null);
-    }
-  }, [pendingTts, csvLoading, aiProcessing, hospitals, specialtyMap, language]);
-
-
-  // --- AUDIO LOGIC ---
-  const toggleRecording = async () => {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      alert("Missing Gemini API Key! Please add VITE_GEMINI_API_KEY to your .env file.");
-      return;
-    }
-
-    if (isListening && mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      setIsListening(false);
-      return;
-    }
-
-    try {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach(track => track.stop());
-        
-        const rawMimeType = mediaRecorder.mimeType || 'audio/webm';
-        const cleanMimeType = rawMimeType.split(';')[0]; 
-        
-        const audioBlob = new Blob(audioChunksRef.current, { type: cleanMimeType });
-        const base64Audio = await blobToBase64(audioBlob);
-        
-        await processAudioWithGemini(base64Audio, cleanMimeType);
-      };
-
-      mediaRecorder.start();
-      setIsListening(true);
-    } catch (err) {
-      console.error("Microphone access error:", err);
-      alert(language === 'hi' ? 'माइक्रोफ़ोन की अनुमति नहीं मिली।' : 'Microphone permission denied.');
-    }
-  };
-
-  const processAudioWithGemini = async (base64Audio: string, mimeType: string) => {
-    setAiProcessing(true);
-    try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim();
-      const targetModel = 'models/gemini-flash-lite-latest';
-
-      const prompt = `
-        You are an intelligent medical triage and UI controller for an Indian PM-JAY hospital app.
-        Analyze the user's spoken audio (which could be in Hindi, English, Hinglish, or regional dialects).
-
-        TASKS:
-        1. EMERGENCY CHECK: Check for life-threatening emergencies (heart attack, massive bleeding, stroke, collapse, severe accidents).
-        2. KEYWORD (DISEASE/SPECIALTY/HOSPITAL NAME): Extract the medical specialty, surgery, OR the specific name of a hospital the user is asking for (e.g., Cardiology, Orthopedics, Apollo, AIIMS, Fortis). 
-           CRITICAL: If NO specific disease, specialty, or hospital name is mentioned, output an empty string "".
-        3. UI FILTER: Detect hospital preferences: "GOV", "PRIVATE", "NABH_Accredited", "SUSPENDED", "BLACKLISTED", "DE-EMPANELED". Otherwise, output null.
-        4. LOCATION: Detect if the user mentioned a specific city or town (e.g., "Pune", "Delhi", "Patna"). Output the city name. Otherwise, output null.
-
-        Output ONLY valid JSON format with this exact structure:
-        {
-          "isEmergency": boolean,
-          "keyword": string,
-          "filter": "GOV" | "PRIVATE" | "NABH_Accredited" | "DE-EMPANELED" | "SUSPENDED" | "BLACKLISTED" | null,
-          "location": string | null
-        }
-
-        Examples:
-        - "मुझे सीने में बहुत तेज दर्द हो रहा है" -> {"isEmergency": true, "keyword": "", "filter": null, "location": null}
-        - "पुणे में सरकारी अस्पताल में दिल का डॉक्टर" -> {"isEmergency": false, "keyword": "Cardiology", "filter": "GOV", "location": "Pune"}
-        - "अपोलो अस्पताल खोजें" -> {"isEmergency": false, "keyword": "Apollo", "filter": null, "location": null}
-        - "Show me government hospitals in Patna" -> {"isEmergency": false, "keyword": "", "filter": "GOV", "location": "Patna"}
-
-        Do not include markdown fences (like \`\`\`json). Output pure raw JSON only.
-      `;
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${targetModel}:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inlineData: { mimeType: mimeType, data: base64Audio } }
-            ]
-          }]
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Google API returned status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '{}';
-      const cleanJsonString = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const parsedData = JSON.parse(cleanJsonString);
-
-      if (parsedData.isEmergency) {
-        setIsEmergency(true);
-        setSearchQuery('');
-        
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const emergencyText = language === 'hi' 
-            ? 'मेडिकल इमरजेंसी! कृपया तुरंत एक सौ आठ पर कॉल करें।' 
-            : 'Medical Emergency detected! Please call one zero eight immediately.';
-          const utterance = new SpeechSynthesisUtterance(emergencyText);
-          utterance.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
-          window.speechSynthesis.speak(utterance);
-        }
-        return;
-      }
-
-      let aiUnderstoodSomething = false;
-
-      if (parsedData.location) {
-        aiUnderstoodSomething = true;
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(parsedData.location)}&countrycodes=in&limit=1`);
-          const locData = await res.json();
-          if (locData && locData.length > 0) {
-            setUserLocation({
-              lat: parseFloat(locData[0].lat),
-              lng: parseFloat(locData[0].lon),
-              city: parsedData.location.charAt(0).toUpperCase() + parsedData.location.slice(1),
-              source: 'manual'
-            });
-          }
-        } catch (e) {
-          console.error("Failed to fetch new location coords", e);
-        }
-      }
-
-      if (parsedData.filter && ['GOV', 'PRIVATE', 'NABH_Accredited', 'DE-EMPANELED', 'SUSPENDED', 'BLACKLISTED'].includes(parsedData.filter)) {
-        setFilterType(parsedData.filter as FilterType);
-        aiUnderstoodSomething = true;
-      }
-
-      if (typeof parsedData.keyword === 'string') {
-        const cleanKeyword = parsedData.keyword.toLowerCase() === 'unknown' ? '' : parsedData.keyword.trim();
-        setSearchQuery(cleanKeyword); 
-        if (cleanKeyword !== '') aiUnderstoodSomething = true;
-        
-        setPendingTts({ keyword: cleanKeyword });
-      }
-
-      if (!aiUnderstoodSomething) {
-        setSearchQuery(language === 'hi' ? 'आवाज़ साफ नहीं थी, फिर से प्रयास करें...' : 'Audio unclear, try again...');
-        setTimeout(() => setSearchQuery(''), 2500);
-      } else {
-        setCurrentPage(1);
-      }
-      
-    } catch (error) {
-      console.error("Gemini AI Processing failed", error);
-      alert("AI Processing Failed. Check your console logs.");
-    } finally {
-      setAiProcessing(false);
-    }
-  };
 
   return (
     <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 relative">
@@ -570,84 +366,145 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
       </div>
 
       {/* Filters and Search Bar Container */}
-      <div className="bg-slate-100 border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+      <div className="bg-slate-100 border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-sm space-y-3">
         
-        {/* Filter Buttons */}
-        <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
-          {FILTER_OPTIONS.map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() => {
-                setFilterType(opt.id);
-                setCurrentPage(1); 
-              }}
-              className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-                filterType === opt.id 
-                  ? 'bg-blue-900 text-white shadow-md' 
-                  : 'bg-white text-slate-600 border border-slate-200 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300 shadow-2xs'
-              }`}
-            >
-              {language === 'hi' ? opt.labelHi : opt.label}
-            </button>
-          ))}
-        </div>
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          {/* Filter Buttons */}
+          <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+            {FILTER_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => {
+                  setFilterType(opt.id);
+                  setCurrentPage(1); 
+                }}
+                className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                  filterType === opt.id 
+                    ? 'bg-blue-900 text-white shadow-md' 
+                    : 'bg-white text-slate-600 border border-slate-200 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300 shadow-2xs'
+                }`}
+              >
+                {language === 'hi' ? opt.labelHi : opt.label}
+              </button>
+            ))}
+          </div>
 
-        {/* Search input with Clear (X) and Mic buttons */}
-        <div className="relative shrink-0 w-full sm:w-[400px] xl:w-auto">
-          <input
-            type="text"
-            placeholder={isListening ? (language === 'hi' ? 'सुन रहा हूँ... रोकने के लिए टैप करें' : 'Listening... click mic to stop') : (language === 'hi' ? 'अस्पताल या सर्जरी खोजें...' : 'Search hospital or surgery...')}
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            readOnly={isListening}
-            className={`w-full sm:w-[400px] text-sm bg-white border rounded-xl py-2.5 pl-10 pr-[72px] focus:outline-none shadow-2xs transition-colors ${
-              isListening ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50' : 'border-slate-200 focus:ring-2 focus:ring-blue-900'
-            } placeholder:text-slate-400`}
-          />
-          <Stethoscope className={`w-4 h-4 absolute left-3.5 top-3 ${isListening ? 'text-rose-500' : 'text-slate-400'}`} />
-          
-          <div className="absolute right-2 top-1.5 flex items-center gap-1">
+          {/* Search input with Clear (X) button & Autocomplete Popover */}
+          <div ref={searchContainerRef} className="relative shrink-0 w-full sm:w-[420px] xl:w-auto">
+            <input
+              type="text"
+              placeholder={language === 'hi' ? 'अस्पताल, बीमारी या अंग खोजें (उदा. दिल, हड्डी, आँख, कैंसर)...' : 'Search hospital, disease or organ (e.g. heart, bone, eye)...'}
+              value={searchQuery}
+              onFocus={() => setSearchFocused(true)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full sm:w-[420px] text-sm bg-white border border-slate-200 rounded-xl py-2.5 pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-900 shadow-2xs transition-colors placeholder:text-slate-400"
+            />
+            <Stethoscope className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
             
             {/* Clear Button (X) */}
-            {searchQuery && !isListening && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  setCurrentPage(1);
-                  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-                }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                title={language === 'hi' ? 'हटाएं' : 'Clear search'}
-              >
-                <X className="w-4 h-4" />
-              </button>
+            {searchQuery && (
+              <div className="absolute right-2.5 top-1.5 flex items-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                  }}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                  title={language === 'hi' ? 'हटाएं' : 'Clear search'}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             )}
 
-            {/* Mic / Stop / Processing Button */}
-            <button 
-              onClick={toggleRecording}
-              disabled={aiProcessing}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-50 ${
-                isListening 
-                  ? 'bg-rose-600 text-white animate-pulse shadow-md' 
-                  : 'bg-slate-100 text-blue-900 hover:bg-blue-900 hover:text-white border border-slate-200'
-              }`}
-              title={language === 'hi' ? 'आवाज़ से खोजें (AI)' : 'AI Voice Search'}
-            >
-              {aiProcessing ? (
-                <RefreshCw className="w-4 h-4 animate-spin text-blue-500" />
-              ) : isListening ? (
-                <Square className="w-4 h-4 fill-current" />
-              ) : (
-                <Mic className="w-4 h-4" />
-              )}
-            </button>
+            {/* Smart Search Suggestions Dropdown */}
+            {searchFocused && (
+              <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200/90 shadow-xl z-50 p-3 space-y-2">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2 px-1">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-900" />
+                    <span>{language === 'hi' ? 'सुझाए गए विभाग व अंग' : 'Suggested Departments & Needs'}</span>
+                  </span>
+                  <button 
+                    type="button" 
+                    onClick={() => setSearchFocused(false)} 
+                    className="text-xs text-slate-400 hover:text-slate-600 p-0.5"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pt-1">
+                  {QUICK_SEARCH_SUGGESTIONS.map((chip) => (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setSearchQuery(chip.query);
+                        setCurrentPage(1);
+                        setSearchFocused(false);
+                      }}
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-900 border border-transparent hover:border-blue-200 transition-all text-left cursor-pointer"
+                    >
+                      <span className="text-base shrink-0">{chip.icon}</span>
+                      <span className="font-bold truncate">{language === 'hi' ? chip.labelHi : chip.labelEn}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Quick Semantic & Popular Search Pills (Clean flex-wrap, NO horizontal scrollbar) */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200/80 text-xs">
+          <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap flex items-center gap-1 shrink-0 pr-1">
+            <Sparkles className="w-3.5 h-3.5 text-blue-900" />
+            <span>{language === 'hi' ? 'लोकप्रिय खोज:' : 'Popular:'}</span>
+          </span>
+
+          {(showAllSuggestions ? QUICK_SEARCH_SUGGESTIONS : QUICK_SEARCH_SUGGESTIONS.slice(0, 5)).map((chip) => {
+            const isSelected = searchQuery.toLowerCase().trim() === chip.query.toLowerCase();
+            return (
+              <button
+                key={chip.id}
+                type="button"
+                onClick={() => {
+                  if (isSelected) {
+                    setSearchQuery('');
+                  } else {
+                    setSearchQuery(chip.query);
+                    setCurrentPage(1);
+                  }
+                }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap cursor-pointer shadow-2xs border ${
+                  isSelected
+                    ? 'bg-blue-900 text-white border-blue-900 shadow-xs'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-blue-900/40 hover:bg-slate-50'
+                }`}
+              >
+                <span>{chip.icon}</span>
+                <span>{language === 'hi' ? chip.labelHi : chip.labelEn}</span>
+              </button>
+            );
+          })}
+
+          {/* Toggle pill to expand or collapse remaining popular categories */}
+          <button
+            type="button"
+            onClick={() => setShowAllSuggestions(prev => !prev)}
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-900 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full border border-blue-200 transition-colors cursor-pointer shadow-2xs"
+          >
+            <span>{showAllSuggestions ? (language === 'hi' ? 'कम दिखाएं' : 'Show less') : `+${QUICK_SEARCH_SUGGESTIONS.length - 5} ${language === 'hi' ? 'और' : 'more'}`}</span>
+            {showAllSuggestions ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+        </div>
+
       </div>
 
       <div className="flex items-center gap-4 px-1 pt-1 pb-2">
@@ -664,9 +521,26 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
             <p className="text-sm font-semibold text-slate-700">{language === 'hi' ? 'पीएम-जय डेटाबेस लोड हो रहा है...' : `Loading PM-JAY ${filterType} Database...`}</p>
           </div>
         ) : paginatedHospitals.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-2 shadow-xs">
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3 shadow-xs">
             <AlertCircle className="w-8 h-8 text-slate-400 mx-auto" />
             <p className="text-sm font-semibold text-slate-700">{t.noHospitalsFound}</p>
+            {searchQuery && (
+              <div className="space-y-2 pt-1">
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  {language === 'hi' 
+                    ? `"${searchQuery}" के लिए कोई परिणाम नहीं मिला। कृपया अंग (उदा. दिल, आँख, हड्डी), बीमारी या शहर का नाम डालकर खोजें।`
+                    : `No results found for "${searchQuery}". Try searching by organ (e.g. heart, eye, bone), disease, or city name.`}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-900 bg-blue-50 hover:bg-blue-100 px-3.5 py-1.5 rounded-lg border border-blue-200 cursor-pointer transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>{language === 'hi' ? 'खोज साफ़ करें' : 'Clear search'}</span>
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           paginatedHospitals.map((hosp, index) => {
@@ -699,6 +573,13 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
                         {isGov ? <ShieldCheck className="w-3 h-3 text-emerald-800" /> : <CheckCircle className="w-3 h-3 text-violet-800" />}
                         <span>{displayMappedLabel}</span>
                       </span>
+
+                      {searchQuery.trim() && ((hosp as any).matchedReason || (hosp as any).matchedReasonHi) && (
+                        <span className="bg-emerald-50 text-emerald-800 border border-emerald-300/90 text-[11px] font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-2xs">
+                          <Sparkles className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span>{language === 'hi' ? ((hosp as any).matchedReasonHi || (hosp as any).matchedReason) : ((hosp as any).matchedReason || (hosp as any).matchedReasonHi)}</span>
+                        </span>
+                      )}
                     </div>
 
                     <button
@@ -826,6 +707,36 @@ export const Page2: React.FC<Page2Props> = ({ language, onBack, onSelectHospital
           </button>
         </div>
       )}
+
+      {/* Standalone Floating AI Assistant & Chat Dialog */}
+      <AiChatDialog
+        language={language}
+        onSetKeyword={(kw) => {
+          setSearchQuery(kw);
+          setCurrentPage(1);
+        }}
+        onSetFilter={(filt) => {
+          setFilterType(filt as FilterType);
+          setCurrentPage(1);
+        }}
+        onSetLocation={async (locName) => {
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locName)}&countrycodes=in&limit=1`);
+            const locData = await res.json();
+            if (locData && locData.length > 0) {
+              setUserLocation({
+                lat: parseFloat(locData[0].lat),
+                lng: parseFloat(locData[0].lon),
+                city: locName.charAt(0).toUpperCase() + locName.slice(1),
+                source: 'manual'
+              });
+            }
+          } catch (e) {
+            console.error("Failed to fetch coords for AI location:", e);
+          }
+        }}
+        onEmergency={() => setIsEmergency(true)}
+      />
 
     </main>
   );
