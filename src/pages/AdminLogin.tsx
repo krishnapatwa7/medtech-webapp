@@ -14,13 +14,14 @@ import {
   Eye, 
   EyeOff, 
   KeyRound, 
-  AlertCircle,
-  Check,
-  Hospital as HospitalIcon,
-  BadgeCheck,
-  Database,
-  MapPin,
-  Phone
+  AlertCircle, 
+  Check, 
+  Hospital as HospitalIcon, 
+  BadgeCheck, 
+  Database, 
+  MapPin, 
+  Phone,
+  Edit3
 } from 'lucide-react';
 import { Language, translations } from '../translations';
 import { 
@@ -29,11 +30,63 @@ import {
   REAL_DEMO_PRESETS, 
   VerifiedHospitalRecord 
 } from '../utils/hospitalVerification';
+import { HospitalAdminData, DeskRole } from '../types/admin';
+import { EditHospitalModal } from '../components/admin/EditHospitalModal';
+import { MitraHelpdeskPage } from './admin/MitraHelpdeskPage';
+import { PreAuthClaimsPage } from './admin/PreAuthClaimsPage';
+import { BedSpecialtyManagerPage } from './admin/BedSpecialtyManagerPage';
 
 interface AdminLoginProps {
   language: Language;
   onBack: () => void;
 }
+
+const getHydratedHospital = (rec: VerifiedHospitalRecord): HospitalAdminData => {
+  const baseEmail = `admin.${(rec.districtCode || 'desk').toLowerCase()}@hospital.gov.in`;
+  const defaultData: HospitalAdminData = {
+    ...rec,
+    email: baseEmail,
+    emergencyContact: '108 / 0788-2322300',
+    totalBeds: rec.type === 'GOV' ? 400 : 250,
+    icuBeds: rec.type === 'GOV' ? 45 : 30,
+    oxygenBeds: rec.type === 'GOV' ? 80 : 50,
+    nodalOfficer: 'Dr. R. K. Sharma (CMO)',
+    mitraLead: 'Sunita Verma (Lead Mitra)',
+    specialties: rec.specialties && rec.specialties.length > 0 
+      ? rec.specialties 
+      : ['General Surgery', 'Orthopedics', 'Gynecology', 'Pediatrics', 'General Medicine']
+  };
+
+  try {
+    const key = `hospital_admin_${rec.facilityId || rec.hospitalId}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      return { ...defaultData, ...JSON.parse(saved) };
+    }
+  } catch (e) {
+    console.warn('Error reading stored hospital data', e);
+  }
+
+  return defaultData;
+};
+
+const INITIAL_DEFAULT_RECORD: VerifiedHospitalRecord = {
+  facilityId: 'HS22010102',
+  hospitalId: '22010102',
+  name: 'Shri Pandurang Ramarao Dongaonkar Govt District Hospital Durg',
+  nameHi: 'जिला अस्पताल दुर्ग (सरकारी)',
+  type: 'GOV',
+  typeCode: 'G',
+  address: 'District Hospital Durg, Near Gandhi Chowk G E Road Durg',
+  contact: '8319399266',
+  districtCode: '378',
+  stateCode: '22',
+  stateName: 'Chhattisgarh',
+  empanelledDate: '2020-03-19',
+  specialties: ['General Surgery', 'Orthopedics', 'Gynecology', 'Pediatrics', 'General Medicine'],
+  schemeCode: 'PM-JAY',
+  sourceFile: '/data/PM_JAY_GOV_Hospitals_Data.csv'
+};
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
   const t = translations[language];
@@ -49,27 +102,14 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
 
-  // Authenticated Hospital State from real database
-  const [verifiedHospital, setVerifiedHospital] = useState<VerifiedHospitalRecord>({
-    facilityId: 'HS22010102',
-    hospitalId: '22010102',
-    name: 'Shri Pandurang Ramarao Dongaonkar Govt District Hospital Durg',
-    nameHi: 'जिला अस्पताल दुर्ग (सरकारी)',
-    type: 'GOV',
-    typeCode: 'G',
-    address: 'District Hospital Durg, Near Gandhi Chowk G E Road Durg',
-    contact: '8319399266',
-    districtCode: '378',
-    stateCode: '22',
-    stateName: 'Chhattisgarh',
-    empanelledDate: '2020-03-19',
-    specialties: ['General Surgery', 'Orthopedics', 'Gynecology'],
-    schemeCode: 'PM-JAY',
-    sourceFile: '/data/PM_JAY_GOV_Hospitals_Data.csv'
-  });
+  // Authenticated & Editable Hospital State
+  const [verifiedHospital, setVerifiedHospital] = useState<HospitalAdminData>(() => getHydratedHospital(INITIAL_DEFAULT_RECORD));
 
   // Desk / Role Selection State
-  const [selectedRole, setSelectedRole] = useState<string>('mitra');
+  const [selectedRole, setSelectedRole] = useState<DeskRole>('mitra');
+
+  // Edit Hospital Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
 
   // Preload real CSV database from public/data on component mount
   useEffect(() => {
@@ -78,7 +118,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
 
   const roles = [
     {
-      id: 'mitra',
+      id: 'mitra' as DeskRole,
       title: 'Ayushman Mitra Helpdesk',
       titleHi: 'आयुष्मान मित्र हेल्पडेस्क',
       desc: 'Patient admission verification, card scan & instant pre-authorization support',
@@ -87,7 +127,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
       color: 'blue'
     },
     {
-      id: 'preauth',
+      id: 'preauth' as DeskRole,
       title: 'Pre-Authorization & Claims Desk',
       titleHi: 'प्री-ऑथराइजेशन एवं क्लेम डेस्क',
       desc: 'Surgical package booking, medical documentation & cashless clearance',
@@ -96,7 +136,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
       color: 'emerald'
     },
     {
-      id: 'bed',
+      id: 'bed' as DeskRole,
       title: 'Hospital Bed & Specialty Manager',
       titleHi: 'बेड उपलब्धता एवं विशेषज्ञता प्रबंधन',
       desc: 'Live ICU/General bed tracker & doctor on-duty availability roster',
@@ -136,7 +176,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
       const result = await verifyHospitalCode(cleanCode);
 
       if (result.success && result.hospital) {
-        setVerifiedHospital(result.hospital);
+        const hydrated = getHydratedHospital(result.hospital);
+        setVerifiedHospital(hydrated);
         setCurrentStep('selectRole');
       } else {
         setVerificationError(
@@ -150,6 +191,29 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
       setVerificationError(err?.message || 'Verification error. Please try again.');
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  const handleSaveHospitalData = (updated: HospitalAdminData) => {
+    setVerifiedHospital(updated);
+    try {
+      const key = `hospital_admin_${updated.facilityId || updated.hospitalId}`;
+      localStorage.setItem(key, JSON.stringify(updated));
+    } catch (err) {
+      console.warn('Failed to save hospital data to localStorage', err);
+    }
+  };
+
+  const handleResetDefaults = async () => {
+    try {
+      const key = `hospital_admin_${verifiedHospital.facilityId || verifiedHospital.hospitalId}`;
+      localStorage.removeItem(key);
+      const result = await verifyHospitalCode(verifiedHospital.facilityId || verifiedHospital.hospitalId);
+      if (result.success && result.hospital) {
+        setVerifiedHospital(getHydratedHospital(result.hospital));
+      }
+    } catch (err) {
+      console.warn('Failed to reset hospital data', err);
     }
   };
 
@@ -390,15 +454,27 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
                 <span>NHA VERIFIED FACILITY DESK</span>
               </div>
 
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="text-[11px] text-slate-300 hover:text-white underline underline-offset-2 flex items-center gap-1 cursor-pointer"
-                title="Switch hospital / Log out"
-              >
-                <LogOut className="w-3 h-3" />
-                <span>{language === 'hi' ? 'अस्पताल बदलें' : 'Switch Hospital'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="text-[11px] text-sky-300 hover:text-white flex items-center gap-1 cursor-pointer bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg transition-colors"
+                  title="Edit Hospital Info"
+                >
+                  <Edit3 className="w-3 h-3" />
+                  <span>{language === 'hi' ? 'जानकारी संपादित करें' : 'Edit Info'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="text-[11px] text-slate-300 hover:text-white underline underline-offset-2 flex items-center gap-1 cursor-pointer"
+                  title="Switch hospital / Log out"
+                >
+                  <LogOut className="w-3 h-3" />
+                  <span>{language === 'hi' ? 'अस्पताल बदलें' : 'Switch Hospital'}</span>
+                </button>
+              </div>
             </div>
 
             <div>
@@ -508,107 +584,54 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ language, onBack }) => {
       )}
 
       {/* ========================================================================= */}
-      {/* STEP 3: ACTIVE HOSPITAL FACILITY DASHBOARD                                 */}
+      {/* STEP 3: DEDICATED OPERATIONAL DESK PAGES                                  */}
       {/* ========================================================================= */}
       {currentStep === 'dashboard' && (
         <div className="space-y-6 animate-in fade-in-50 duration-200">
-          
-          {/* Header Dashboard Banner with Hospital & Role context */}
-          <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-md">
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full mb-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Active Empaneled Facility Desk</span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black">
-                {language === 'hi' ? (verifiedHospital.nameHi || verifiedHospital.name) : verifiedHospital.name}
-              </h2>
-              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-slate-300">
-                <span className="font-mono text-sky-300 font-bold">{verifiedHospital.facilityId}</span>
-                <span>•</span>
-                <span className="text-emerald-300">{verifiedHospital.type}</span>
-                <span>•</span>
-                <span>Active Desk: <strong className="text-white">{roles.find(r => r.id === selectedRole)?.title}</strong></span>
-              </div>
-            </div>
+          {selectedRole === 'mitra' && (
+            <MitraHelpdeskPage
+              hospital={verifiedHospital}
+              adminUsername={adminUsername}
+              language={language}
+              onSwitchDesk={() => setCurrentStep('selectRole')}
+              onLogout={handleLogout}
+              onOpenEditModal={() => setIsEditModalOpen(true)}
+            />
+          )}
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentStep('selectRole')}
-                className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
-              >
-                <Building2 className="w-3.5 h-3.5" />
-                <span>{language === 'hi' ? 'रोल बदलें' : 'Switch Desk'}</span>
-              </button>
-              
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center gap-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>{language === 'hi' ? 'लॉगआउट' : 'Log Out'}</span>
-              </button>
-            </div>
-          </div>
+          {selectedRole === 'preauth' && (
+            <PreAuthClaimsPage
+              hospital={verifiedHospital}
+              adminUsername={adminUsername}
+              language={language}
+              onSwitchDesk={() => setCurrentStep('selectRole')}
+              onLogout={handleLogout}
+              onOpenEditModal={() => setIsEditModalOpen(true)}
+            />
+          )}
 
-          {/* Under Construction Notice Card */}
-          <div className="bg-amber-50 border border-amber-300/80 rounded-2xl p-5 flex items-start gap-3 shadow-xs">
-            <div className="p-2 rounded-xl bg-amber-600 text-white shrink-0">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <h4 className="text-xs sm:text-sm font-extrabold text-amber-950">
-                Hospital Admin Desk ({roles.find(r => r.id === selectedRole)?.title}) Active
-              </h4>
-              <p className="text-xs text-amber-900 mt-0.5 leading-relaxed">
-                {t.adminNotice} All Citizen features remain fully active inside the <strong>User Login</strong> portal.
-              </p>
-            </div>
-          </div>
-
-          {/* 4 Preview Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-900 flex items-center justify-center">
-                <Activity className="w-5 h-5" />
-              </div>
-              <div className="text-2xl font-black text-slate-900">42</div>
-              <div className="text-xs font-bold text-slate-600">Active PM-JAY Inpatients</div>
-              <p className="text-[11px] text-slate-400">12 admitted today</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-900 flex items-center justify-center">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div className="text-2xl font-black text-slate-900">98.4%</div>
-              <div className="text-xs font-bold text-slate-600">Pre-Auth Approval Rate</div>
-              <p className="text-[11px] text-slate-400">Avg time: 14 mins</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-900 flex items-center justify-center">
-                <BedDouble className="w-5 h-5" />
-              </div>
-              <div className="text-2xl font-black text-slate-900">128 / 400</div>
-              <div className="text-xs font-bold text-slate-600">Beds Available</div>
-              <p className="text-[11px] text-slate-400">18 ICU beds free</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center">
-                <UserCheck className="w-5 h-5" />
-              </div>
-              <div className="text-2xl font-black text-slate-900">4 Desks</div>
-              <div className="text-xs font-bold text-slate-600">Ayushman Mitra On-Duty</div>
-              <p className="text-[11px] text-slate-400">Reception Counter 1-4</p>
-            </div>
-
-          </div>
-
+          {selectedRole === 'bed' && (
+            <BedSpecialtyManagerPage
+              hospital={verifiedHospital}
+              adminUsername={adminUsername}
+              language={language}
+              onSwitchDesk={() => setCurrentStep('selectRole')}
+              onLogout={handleLogout}
+              onOpenEditModal={() => setIsEditModalOpen(true)}
+            />
+          )}
         </div>
       )}
+
+      {/* Global Edit Hospital & Desk Details Modal */}
+      <EditHospitalModal
+        isOpen={isEditModalOpen}
+        hospital={verifiedHospital}
+        language={language}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleSaveHospitalData}
+        onResetDefaults={handleResetDefaults}
+      />
 
     </main>
   );
